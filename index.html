@@ -62,26 +62,43 @@
             display: none;  /* ซ่อนไว้ */
         }
         .developer-info {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0,0,0,0.5);
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 6px;
+            display: none; /* hidden, moved into #info */
+        }
+        /* inline developer text placed inside #info */
+        .dev-inline {
+            display: block;
             font-family: monospace;
             font-size: 11px;
-            pointer-events: none;
-            z-index: 10;
-            backdrop-filter: blur(4px);
+            color: #ddd;
+            margin-bottom: 6px;
+            opacity: 0.95;
+        }
+
+        /* lil-gui overlay positioning so it sits above the top-right buttons */
+        .lil-gui {
+            position: absolute !important;
+            top: 12px !important;
+            right: 12px !important;
+            z-index: 1000 !important; /* well above buttons and other UI */
+            pointer-events: auto !important;
+            width: 260px;
+            max-width: calc(100% - 24px);
+        }
+
+        /* Desktop: move the two control buttons to the top-left on wide screens */
+        @media (min-width: 900px) {
+            .mode-toggle { left: 20px; right: auto; top: 20px; }
+            #stormBtn { left: 20px; right: auto; top: 80px; }
+        }
+
+        @media (max-width: 600px) {
+            /* Mobile: hide GUI to avoid menu/button overlap on small devices */
+            .lil-gui { display: none !important; }
         }
     </style>
 </head>
 <body>
-    <div class="developer-info">
-        👨‍💻 Developer: likit_se@irc.co.th
-    </div>
-    <div id="info">⛈️ 2.5D Ocean | Stormy Sky | <span style="color:#ff8888;">Glowing Clouds + Lightning</span></div>
+    <div id="info"><span class="dev-inline">👨‍💻 Developer: likit_se@irc.co.th</span>⛈️ 2.5D Ocean | Stormy Sky | <span style="color:#ff8888;">Glowing Clouds + Lightning</span></div>
     <button id="daynightBtn" class="mode-toggle">🌙 กลางคืน</button>
     <button id="stormBtn" class="mode-toggle" style="color: #ffaa66;">⛈️ เปิดพายุฝน</button>
     <div id="debug">กำลังโหลด...</div>
