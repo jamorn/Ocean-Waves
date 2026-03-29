@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>2.5D Ocean - Stormy Sky + Fish Underwater</title>
+    <title>2.5D Ocean Waves - Stormy Sky with Glowing Clouds</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #info {
@@ -37,28 +37,14 @@
             transition: 0.2s;
         }
         .mode-toggle:hover { background: rgba(0,0,0,0.9); transform: scale(1.02); }
-        #storm-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 20;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 40px;
-            padding: 10px 20px;
-            color: #ffaa66;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: monospace;
-            font-size: 14px;
-            transition: 0.2s;
+        #stormBtn {
+            top: 80px;  /* เพิ่มระยะห่างจาก 70px -> 80px */
+            right: 20px;
+            background: #331100;
         }
-        #storm-btn:hover { background: rgba(0,0,0,0.9); transform: scale(1.02); }
         @media (max-width: 600px) {
-            .mode-toggle, #storm-btn { font-size: 10px; padding: 6px 12px; top: 12px; }
-            #storm-btn { left: 12px; }
-            .mode-toggle { right: 12px; }
+            .mode-toggle { font-size: 12px; padding: 8px 14px; top: 12px; right: 12px; }
+            #stormBtn { top: 60px; font-size: 11px; padding: 6px 12px; }  /* เพิ่มจาก 56px -> 60px */
             #info { font-size: 10px; bottom: 10px; }
         }
         #debug {
@@ -73,13 +59,48 @@
             z-index: 20;
             pointer-events: none;
             border-radius: 4px;
+            display: none;  /* ซ่อนไว้ */
+        }
+        .developer-info {
+            display: none; /* hidden, moved into #info */
+        }
+        /* inline developer text placed inside #info */
+        .dev-inline {
+            display: block;
+            font-family: monospace;
+            font-size: 11px;
+            color: #ddd;
+            margin-bottom: 6px;
+            opacity: 0.95;
+        }
+
+        /* lil-gui overlay positioning so it sits above the top-right buttons */
+        .lil-gui {
+            position: absolute !important;
+            top: 12px !important;
+            right: 12px !important;
+            z-index: 1000 !important; /* well above buttons and other UI */
+            pointer-events: auto !important;
+            width: 260px;
+            max-width: calc(100% - 24px);
+        }
+
+        /* Desktop: move the two control buttons to the top-left on wide screens */
+        @media (min-width: 900px) {
+            .mode-toggle { left: 20px; right: auto; top: 20px; }
+            #stormBtn { left: 20px; right: auto; top: 80px; }
+        }
+
+        @media (max-width: 600px) {
+            /* Mobile: hide GUI to avoid menu/button overlap on small devices */
+            .lil-gui { display: none !important; }
         }
     </style>
 </head>
 <body>
-    <div id="info">🐟 2.5D Ocean | Stormy Sky | <span style="color:#88ff88;">15 Fish Swimming</span></div>
+    <div id="info"><span class="dev-inline">👨‍💻 Developer: likit_se@irc.co.th</span>⛈️ 2.5D Ocean | Stormy Sky | <span style="color:#ff8888;">Glowing Clouds + Lightning</span></div>
     <button id="daynightBtn" class="mode-toggle">🌙 กลางคืน</button>
-    <button id="stormBtn" class="mode-toggle" style="left: auto; right: 120px; background: #331100;">⛈️ เปิดพายุฝน</button>
+    <button id="stormBtn" class="mode-toggle" style="color: #ffaa66;">⛈️ เปิดพายุฝน</button>
     <div id="debug">กำลังโหลด...</div>
 
     <script type="importmap">
@@ -102,15 +123,13 @@
         const debugDiv = document.getElementById('debug');
         function log(msg) { console.log(msg); if(debugDiv) debugDiv.innerHTML = msg; }
 
-        // Movement bounds for fish placement and targets
+        // Movement bounds and buoy position for fish (copied from fish scene)
         const BOUNDS = { x: { min: -24, max: 24 }, z: { min: -22, max: 22 }, y: { min: -7, max: -1.5 } };
-
-        // 聚: Buoy / Lighthouse position — fish will swim around this point
         const BUOY_POS = new THREE.Vector3(5, -2.5, -4);
 
-        // ========== 1. OceanPlane (คลื่น) ==========
+        // ========== 1. OceanPlane (คลื่น) - เหมือนเดิม ==========
         class OceanPlane {
-            constructor(width = 24, depth = 24, segments = 200) {
+            constructor(width = 22, depth = 22, segments = 200) {
                 this.geometry = this._createGeometry(width, depth, segments);
                 this.material = this._createMaterial();
                 this.mesh = new THREE.Mesh(this.geometry, this.material);
@@ -131,14 +150,15 @@
             _createMaterial() {
                 const uniforms = {
                     uTime: { value: 0 },
-                    uColorDeep: { value: new THREE.Color(0x023e5a) },
-                    uColorMid: { value: new THREE.Color(0x0a6b8e) },
-                    uColorShallow: { value: new THREE.Color(0x3b9ec7) },
-                    uColorFoam: { value: new THREE.Color(0xe0f7ff) }
+                    uColorDeep: { value: new THREE.Color(0x001a2e) },      // เข้มมากขึ้น (จาก 0x023e5a)
+                    uColorMid: { value: new THREE.Color(0x034a6b) },       // เข้มขึ้น (จาก 0x0a6b8e)
+                    uColorShallow: { value: new THREE.Color(0x2a8db3) },   // ปานกลาง (จาก 0x3b9ec7)
+                    uColorFoam: { value: new THREE.Color(0xc0e8f5) }       // อ่อนลง (จาก 0xe0f7ff)
                 };
                 const vs = `
                     uniform float uTime;
                     varying float vElevation;
+                    varying vec3 vPosition;
                     void main() {
                         vec3 pos = position;
                         float x = pos.x, z = pos.z;
@@ -152,19 +172,29 @@
                         y += sin(x * 3.2 + uTime * 2.5) * 0.05;
                         y += sin(z * 3.5 - uTime * 2.2) * 0.05;
                         pos.y = y;
-                        vElevation = (y + 0.7) / 1.4;
+                        vElevation = (y + 0.9) / 1.8;  // เพิ่มช่วงจาก 1.4 -> 1.8 เพื่อความลึก
+                        vPosition = pos;
                         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
                     }
                 `;
                 const fs = `
                     uniform vec3 uColorDeep, uColorMid, uColorShallow, uColorFoam;
                     varying float vElevation;
+                    varying vec3 vPosition;
                     void main() {
                         float t = clamp(vElevation, 0.0, 1.0);
                         vec3 color;
-                        if (t < 0.4) color = mix(uColorDeep, uColorMid, t/0.4);
-                        else if (t < 0.75) color = mix(uColorMid, uColorShallow, (t-0.4)/0.35);
-                        else color = mix(uColorShallow, uColorFoam, (t-0.75)/0.25);
+                        // ไล่เฉดความลึกที่ชัดเจนขึ้น
+                        if (t < 0.3) color = mix(uColorDeep, uColorMid, t/0.3);
+                        else if (t < 0.6) color = mix(uColorMid, uColorShallow, (t-0.3)/0.3);
+                        else if (t < 0.85) color = mix(uColorShallow, uColorFoam, (t-0.6)/0.25);
+                        else color = uColorFoam;
+                        
+                        // เพิ่มความเข้มตามระยะห่างจากศูนย์กลาง (depth fade)
+                        float dist = length(vPosition.xz) / 12.0;
+                        float depthFactor = 1.0 - smoothstep(0.3, 1.0, dist) * 0.3;
+                        color *= depthFactor;
+                        
                         float sparkle = smoothstep(0.75, 0.95, t) * 0.5;
                         color += vec3(sparkle * 0.4, sparkle * 0.5, sparkle * 0.7);
                         gl_FragColor = vec4(color, 1.0);
@@ -178,7 +208,7 @@
 
         // ========== 2. ParticleSystem (ประกายแสงบนน้ำ) ==========
         class ParticleSystem {
-            constructor(count = 1800, range = 22) {
+            constructor(count = 1800, range = 20) {
                 const geom = new THREE.BufferGeometry();
                 const pos = new Float32Array(count * 3);
                 for (let i = 0; i < count; i++) {
@@ -197,11 +227,11 @@
             }
         }
 
-        // ========== 3. Lighthouse (ประภาคาร) ==========
+        // ========== 3. Lighthouse (ประภาคาร) - ปรับเพิ่มความสว่าง ==========
         class Lighthouse {
-            constructor(x = 5, z = -4) {
+            constructor(x = 6, z = -5) {
                 this.group = new THREE.Group();
-                // ฐานสีขาว
+                // ฐานทุ่นสีขาว
                 const baseCylinder = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.95, 1.3, 0.5, 32),
                     new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.1 })
@@ -223,9 +253,31 @@
                 connectingTower.position.y = 1.15;
                 this.group.add(connectingTower);
                 
-                const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.85, 2.5, 16), new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.4, metalness: 0.1 }));
+                // เสาหลัก - สีแดงพื้น
+                const tower = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.55, 0.85, 2.5, 32),
+                    new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.4, metalness: 0.1 })
+                );
                 tower.position.y = 0.8 + 1.25;
                 this.group.add(tower);
+                
+                // เพิ่มลายขวางสีขาว 5 เส้น
+                const stripeHeight = 0.25;
+                const towerHeight = 2.5;
+                const stripePositions = [0.4, 1.0, 1.6, 2.2, 2.8]; // ตำแหน่ง Y ของแต่ละเส้น
+                
+                stripePositions.forEach((yOffset, index) => {
+                    // คำนวณ radius ที่ตำแหน่งนั้นๆ (เพราะทาวเวอร์เป็นรูปกรวย)
+                    const t = yOffset / towerHeight;
+                    const radius = 0.85 - (0.85 - 0.55) * t + 0.01; // +0.01 เพื่อไม่ให้ติดพื้นผิว
+                    
+                    const stripe = new THREE.Mesh(
+                        new THREE.CylinderGeometry(radius, radius, stripeHeight, 32),
+                        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1 })
+                    );
+                    stripe.position.y = 0.8 + yOffset;
+                    this.group.add(stripe);
+                });
                 
                 const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.3, 0.9), new THREE.MeshStandardMaterial({ color: 0xff0000, metalness: 0.3, roughness: 0.4 }));
                 lantern.position.y = 2.45 + 0.15;
@@ -235,15 +287,57 @@
                 glass.position.y = 2.6 + 0.3;
                 this.group.add(glass);
                 
-                const spire = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.4 }));
-                spire.position.y = 2.9 + 0.45;
-                this.group.add(spire);
-                
-                // หลอดไฟ
+                // หลอดไฟหลัก
                 const bulbMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0, metalness: 0.1, roughness: 0.2 });
                 this.bulb = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 32), bulbMat);
                 this.bulb.position.set(0, 3.15, 0);
                 this.group.add(this.bulb);
+                
+                // หลังคากรวยสีขาว (ลอยเหนือหลอดไฟ)
+                const roofCone = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.7, 0.6, 16),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1 })
+                );
+                roofCone.position.y = 3.8;
+                this.group.add(roofCone);
+                
+                // Support 4 ขา (เชื่อมจาก lantern ไปถึงกรวยหลังคา - หดสั้นลงเพื่อไม่ให้ทะลุกรวย)
+                const supportMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.2 });
+                const supportPositions = [
+                    [0.4, 0, 0.4],
+                    [-0.4, 0, 0.4],
+                    [0.4, 0, -0.4],
+                    [-0.4, 0, -0.4]
+                ];
+                
+                const supportHeight = 0.6;  // ลดจาก 1.1 → 0.6
+                const supportYStart = 3.2;  // เริ่มจากใต้กรวยเล็กน้อย
+                
+                supportPositions.forEach(([x, y, z]) => {
+                    const support = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.03, 0.03, supportHeight, 8),
+                        supportMaterial
+                    );
+                    support.position.set(x, supportYStart, z);
+                    this.group.add(support);
+                });
+                
+                // ยอดแหลมสีแดง (บนสุด) - เรืองแสงตลอดเวลา
+                const spireMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xff0000, 
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.8,  // เรืองแสงแรง
+                    roughness: 0.3,
+                    metalness: 0.1
+                });
+                const spire = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 8), spireMat);
+                spire.position.y = 4.3;
+                this.group.add(spire);
+                
+                // PointLight เล็กๆ ที่ยอดแหลม (ติดตลอดเวลา)
+                const spireLight = new THREE.PointLight(0xff0000, 0.5, 8);
+                spireLight.position.set(0, 4.3, 0);
+                this.group.add(spireLight);
                 
                 this.redLight = new THREE.PointLight(0xff0000, 0, 15);
                 this.redLight.position.set(0, 3.15, 0);
@@ -312,36 +406,58 @@
             }
         }
 
-        // ========== 4. CloudSystem (เมฆ) ==========
+        // ========== 4. CloudSystem (เมฆพร้อมแสงในเมฆ) ==========
         class CloudSystem {
-            constructor(scene, count = 14) {
+            constructor(scene, count = 12) {
                 this.scene = scene;
                 this.clouds = [];
+                this.lightningFlash = 0;
                 this.flashIntensity = 0;
-                this.nextFlashTime = Math.random() * 5 + 3;
+                this.nextFlashTime = Math.random() * 5 + 3; // สุ่มเวลาฟ้าผ่า 3-8 วินาที
                 
+                // สร้างเมฆหลายก้อน
                 for (let i = 0; i < count; i++) {
                     const cloudGroup = this._createCloud();
+                    // ตำแหน่งสุ่มในรัศมี 25-40 หน่วย, ความสูง 6-12
                     const radius = 20 + Math.random() * 20;
                     const angle = Math.random() * Math.PI * 2;
                     const x = Math.cos(angle) * radius;
                     const z = Math.sin(angle) * radius;
                     const y = 5 + Math.random() * 6;
                     cloudGroup.position.set(x, y, z);
+                    
+                    // สุ่มขนาดเมฆ
                     const scale = 0.8 + Math.random() * 1.2;
                     cloudGroup.scale.set(scale, scale * 0.7, scale);
+                    
+                    // เก็บค่า emissive intensity พื้นฐาน
                     cloudGroup.userData = {
                         baseEmissive: 0.05 + Math.random() * 0.1,
                         flickerSpeed: 0.5 + Math.random() * 1.5,
-                        flickerPhase: Math.random() * Math.PI * 2
+                        flickerPhase: Math.random() * Math.PI * 2,
+                        driftSpeed: 0.05 + Math.random() * 0.1,  // ความเร็วลอย
+                        driftAngle: Math.random() * Math.PI * 2,  // ทิศทางลอย
+                        initialX: x,
+                        initialZ: z
                     };
+                    
                     this.scene.add(cloudGroup);
                     this.clouds.push(cloudGroup);
                 }
+                
+                // เพิ่มเมฆพิเศษก้อนใหญ่ใกล้กล้อง
                 const bigCloud = this._createCloud(true);
                 bigCloud.position.set(-15, 8, -12);
                 bigCloud.scale.set(2.5, 1.8, 2);
-                bigCloud.userData = { baseEmissive: 0.15, flickerSpeed: 0.8, flickerPhase: 0 };
+                bigCloud.userData = { 
+                    baseEmissive: 0.15, 
+                    flickerSpeed: 0.8, 
+                    flickerPhase: 0,
+                    driftSpeed: 0.03,
+                    driftAngle: Math.PI * 0.5,
+                    initialX: -15,
+                    initialZ: -12
+                };
                 this.scene.add(bigCloud);
                 this.clouds.push(bigCloud);
             }
@@ -349,11 +465,15 @@
             _createCloud(isBig = false) {
                 const group = new THREE.Group();
                 const color = isBig ? 0x886e6e : 0xaaaaaa;
+                const darkColor = 0x665555;
                 const glowColor = 0xffaa88;
+                
+                // สร้าง sphere หลายๆ ลูกประกอบเป็นเมฆ
                 const parts = isBig ? [1.2, 1.0, 0.9, 0.8, 0.7] : [0.9, 0.8, 0.7, 0.6, 0.5];
                 const offsets = isBig 
                     ? [[0,0,0], [1.0,0.2,0.8], [-0.9,0.1,0.7], [0.5,0.6,0.4], [-0.4,0.5,-0.6], [0.2,-0.3,1.1], [-0.7,-0.2,-0.5]]
                     : [[0,0,0], [0.8,0.1,0.6], [-0.7,0,0.5], [0.4,0.5,0.3], [-0.3,0.4,-0.5], [0.1,-0.2,0.9]];
+                
                 parts.forEach((size, idx) => {
                     const offset = offsets[idx % offsets.length];
                     const sphereMat = new THREE.MeshStandardMaterial({
@@ -361,34 +481,54 @@
                         emissive: glowColor,
                         emissiveIntensity: 0.05,
                         roughness: 0.7,
-                        metalness: 0.05
+                        metalness: 0.05,
+                        flatShading: false
                     });
                     const sphere = new THREE.Mesh(new THREE.SphereGeometry(size, 16, 16), sphereMat);
                     sphere.position.set(offset[0], offset[1] + 0.2, offset[2]);
                     group.add(sphere);
                 });
+                
                 return group;
             }
             
             update(time, isStormActive) {
-                this.clouds.forEach(cloud => {
+                // อัปเดตเมฆแต่ละก้อน
+                this.clouds.forEach((cloud, index) => {
                     const data = cloud.userData;
+                    
+                    // เคลื่อนที่เมฆแบบค่อยๆ ลอย
+                    const driftX = Math.sin(time * data.driftSpeed + data.driftAngle) * 0.02;
+                    const driftZ = Math.cos(time * data.driftSpeed + data.driftAngle) * 0.02;
+                    cloud.position.x = data.initialX + driftX * 50;
+                    cloud.position.z = data.initialZ + driftZ * 50;
+                    
+                    // ลอยขึ้นลงเล็กน้อย
+                    cloud.position.y += Math.sin(time * 0.3 + index) * 0.003;
+                    
+                    // อัปเดตแสงในเมฆ (flickering)
                     let intensity = data.baseEmissive;
                     if (isStormActive) {
+                        // ช่วงพายุ: เรืองแรงขึ้นและกระพริบเร็ว
                         intensity += 0.15 + Math.sin(time * data.flickerSpeed + data.flickerPhase) * 0.1;
                         intensity = Math.min(0.5, intensity);
                     } else {
                         intensity += Math.sin(time * 0.5 + data.flickerPhase) * 0.05;
                     }
+                    
+                    // ฟ้าผ่า: เพิ่มความสว่างจ้าทันที
                     if (this.flashIntensity > 0) {
                         intensity += this.flashIntensity * 1.5;
                     }
+                    
                     cloud.children.forEach(child => {
                         if (child.isMesh && child.material) {
                             child.material.emissiveIntensity = Math.max(0.05, intensity);
                         }
                     });
                 });
+                
+                // ลด flash intensity
                 if (this.flashIntensity > 0) {
                     this.flashIntensity *= 0.95;
                     if (this.flashIntensity < 0.01) this.flashIntensity = 0;
@@ -401,12 +541,16 @@
                 return this.flashIntensity;
             }
             
-            getFlashIntensity() { return this.flashIntensity; }
+            getFlashIntensity() {
+                return this.flashIntensity;
+            }
         }
 
-        // ========== 5. RainSystem (ฝน) ==========
+        // ========== 5. RainSystem (ฝนตกปรอยๆ) ==========
         class RainSystem {
-            constructor(scene, count = 1200) {
+            constructor(scene, count = 800) {
+                this.particles = [];
+                this.isRaining = false;
                 const geometry = new THREE.BufferGeometry();
                 const positions = new Float32Array(count * 3);
                 for (let i = 0; i < count; i++) {
@@ -415,18 +559,24 @@
                     positions[i*3+2] = (Math.random() - 0.5) * 30 - 5;
                 }
                 geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                const material = new THREE.PointsMaterial({ color: 0xaaddff, size: 0.08, transparent: true, opacity: 0, blending: THREE.AdditiveBlending });
+                const material = new THREE.PointsMaterial({
+                    color: 0xaaddff,
+                    size: 0.08,
+                    transparent: true,
+                    opacity: 0,
+                    blending: THREE.AdditiveBlending
+                });
                 this.points = new THREE.Points(geometry, material);
                 scene.add(this.points);
                 this.count = count;
                 this.originalPositions = positions.slice();
-                this.isRaining = false;
             }
             
             setRainActive(active) {
                 this.isRaining = active;
                 this.points.material.opacity = active ? 0.6 : 0;
                 if (!active) {
+                    // รีเซ็ตตำแหน่งฝน
                     const posAttr = this.points.geometry.attributes.position.array;
                     for (let i = 0; i < this.count; i++) {
                         posAttr[i*3] = this.originalPositions[i*3];
@@ -441,7 +591,7 @@
                 if (!this.isRaining) return;
                 const positions = this.points.geometry.attributes.position.array;
                 for (let i = 0; i < this.count; i++) {
-                    positions[i*3+1] -= deltaTime * 4;
+                    positions[i*3+1] -= deltaTime * 4; // ตกเร็ว
                     if (positions[i*3+1] < 0) {
                         positions[i*3+1] = 12 + Math.random() * 3;
                         positions[i*3] = (Math.random() - 0.5) * 40;
@@ -642,8 +792,7 @@
                 this.fishes.forEach(f => f.update(time, delta, false));
             }
         }
-
-        // ========== 7. Main App ==========
+        // ========== 6. Main App ==========
         class OceanSceneApp {
             constructor() {
                 this.scene = new THREE.Scene();
@@ -656,7 +805,6 @@
                 this.lighthouse = null;
                 this.cloudSystem = null;
                 this.rainSystem = null;
-                this.fishSystem = null;
                 this.ambientLight = null;
                 this.directionalLight = null;
                 this.isNight = true;
@@ -666,6 +814,7 @@
             }
             
             init() {
+                // ตั้งค่าฉาก
                 this.scene.background = new THREE.Color(0x1a2a4a);
                 this.scene.fog = new THREE.FogExp2(0x1a2a4a, 0.015);
                 
@@ -678,6 +827,7 @@
                 this.renderer.toneMappingExposure = 1.2;
                 document.body.appendChild(this.renderer.domElement);
                 
+                // Controls
                 const controls = new OrbitControls(this.camera, this.renderer.domElement);
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.05;
@@ -685,52 +835,65 @@
                 controls.target.set(4, 1.5, -3);
                 this.controls = controls;
                 
+                // แสง
                 this.ambientLight = new THREE.AmbientLight(0x335588, 0.45);
                 this.scene.add(this.ambientLight);
                 this.directionalLight = new THREE.DirectionalLight(0xccaa88, 0.6);
                 this.directionalLight.position.set(5, 12, 8);
                 this.scene.add(this.directionalLight);
                 
-                this.ocean = new OceanPlane(24, 24, 200);
+                // วัตถุ - Optimized
+                this.ocean = new OceanPlane(24, 24, 150);  // ลด segments จาก 200 -> 150
                 this.ocean.addToScene(this.scene);
-                this.particles = new ParticleSystem(1800, 22);
+                this.particles = new ParticleSystem(1200, 22);  // ลด particles จาก 1800 -> 1200
                 this.particles.addToScene(this.scene);
                 this.lighthouse = new Lighthouse(5, -4);
                 this.lighthouse.addToScene(this.scene);
                 
-                this.cloudSystem = new CloudSystem(this.scene, 14);
-                this.rainSystem = new RainSystem(this.scene, 1200);
-                this.fishSystem = new FishSystem(this.scene, 15); // 15 ปลา ขนาดต่างกัน
+                // ระบบเมฆและฝน - Optimized
+                this.cloudSystem = new CloudSystem(this.scene, 10);  // ลด clouds จาก 14 -> 10
+                this.rainSystem = new RainSystem(this.scene, 800);  // ลด rain จาก 1200 -> 800
+                // Fish system: spawn fish around the lighthouse/buoy
+                this.fishSystem = new FishSystem(this.scene, 15);
                 
-                // Bloom effect - ตั้งค่า threshold = 1 ตามที่ขอ
+                // Bloom effect - Optimized
                 this.composer = new EffectComposer(this.renderer);
                 this.composer.addPass(new RenderPass(this.scene, this.camera));
-                this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.6, 1.0);
+                this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.5, 1.0);
                 this.composer.addPass(this.bloomPass);
                 
                 // GUI
                 this.settings = {
                     bloomEnabled: true,
-                    bloomStrength: 1.2,
-                    bloomRadius: 0.6,
-                    bloomThreshold: 1.0,   // default = 1
+                    bloomStrength: 1.0,
+                    bloomRadius: 0.5,
+                    bloomThreshold: 1.0,  // เปลี่ยนเป็น 1.0
                 };
                 const gui = new GUI();
                 gui.title('🌩️ Storm Controls');
                 const bloomFolder = gui.addFolder('💡 Bloom Effect');
-                bloomFolder.add(this.settings, 'bloomEnabled').name('Enable Bloom').onChange(v => log(v ? 'Bloom ON' : 'Bloom OFF'));
-                bloomFolder.add(this.settings, 'bloomStrength', 0, 2.5, 0.05).name('Strength').onChange(v => { if(this.bloomPass) this.bloomPass.strength = v; });
-                bloomFolder.add(this.settings, 'bloomRadius', 0, 1, 0.05).name('Radius').onChange(v => { if(this.bloomPass) this.bloomPass.radius = v; });
-                bloomFolder.add(this.settings, 'bloomThreshold', 0, 2, 0.02).name('Threshold').onChange(v => { if(this.bloomPass) this.bloomPass.threshold = v; });
+                bloomFolder.add(this.settings, 'bloomEnabled').name('Enable Bloom').onChange(v => {
+                    log(v ? 'Bloom ON' : 'Bloom OFF');
+                });
+                bloomFolder.add(this.settings, 'bloomStrength', 0, 2.5, 0.05).name('Strength').onChange(v => {
+                    if (this.bloomPass) this.bloomPass.strength = v;
+                });
+                bloomFolder.add(this.settings, 'bloomRadius', 0, 1, 0.05).name('Radius').onChange(v => {
+                    if (this.bloomPass) this.bloomPass.radius = v;
+                });
+                bloomFolder.add(this.settings, 'bloomThreshold', 0, 1, 0.02).name('Threshold').onChange(v => {
+                    if (this.bloomPass) this.bloomPass.threshold = v;
+                });
                 gui.close();
                 
+                // ปุ่ม
                 const btnDayNight = document.getElementById('daynightBtn');
                 btnDayNight.addEventListener('click', () => this.toggleDayNight());
                 const btnStorm = document.getElementById('stormBtn');
                 btnStorm.addEventListener('click', () => this.toggleStorm());
                 
                 this.setDayNightMode(true);
-                log("✅ พร้อมใช้งาน | ปลา 15 ตัวกำลังว่ายน้ำ | Threshold default = 1");
+                log("✅ พร้อมใช้งาน! กดปุ่ม 'เปิดพายุฝน' เพื่อดูเมฆเรืองแสงและฟ้าผ่า");
                 
                 window.addEventListener('resize', () => this.onResize());
                 this.animate();
@@ -743,10 +906,11 @@
                     btn.innerHTML = '🌧️ ปิดพายุฝน';
                     btn.style.background = '#335577';
                     this.rainSystem.setRainActive(true);
+                    // ปรับบรรยากาศให้มืดครึ้ม
                     this.scene.fog.density = 0.025;
                     this.ambientLight.intensity = 0.35;
                     this.directionalLight.intensity = 0.3;
-                    log("⛈️ เปิดโหมดพายุฝน - เมฆเรืองแสง ฟ้าผ่า");
+                    log("⛈️ เปิดโหมดพายุฝน - เมฆเรืองแสงและฟ้าผ่า");
                 } else {
                     btn.innerHTML = '⛈️ เปิดพายุฝน';
                     btn.style.background = '#331100';
@@ -809,12 +973,15 @@
                 this.particles.update(time);
                 this.lighthouse.update(time);
                 this.rainSystem.update(delta);
-                this.fishSystem.update(time, delta);
+                if (this.fishSystem) this.fishSystem.update(time, delta);
                 
+                // ฟ้าผ่าสุ่มเมื่อเปิดพายุ
                 if (this.isStormActive) {
                     if (time > this.lightningTimer) {
+                        // สุ่มช่วงเวลาฟ้าผ่า 3-8 วินาที
                         this.lightningTimer = time + 3 + Math.random() * 5;
                         const flash = this.cloudSystem.triggerLightning();
+                        // กระพริบแสงทั้งฉากชั่วขณะ
                         this.directionalLight.intensity += flash * 0.8;
                         setTimeout(() => {
                             if (this.directionalLight.intensity > 0.3)
@@ -823,8 +990,10 @@
                     }
                 }
                 
+                // อัปเดตเมฆ
                 this.cloudSystem.update(time, this.isStormActive);
                 
+                // ตั้งค่า bloom ตาม GUI
                 if (this.settings.bloomEnabled && this.composer) {
                     this.bloomPass.strength = this.settings.bloomStrength;
                     this.bloomPass.radius = this.settings.bloomRadius;
