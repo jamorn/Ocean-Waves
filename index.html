@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>2.5D Ocean Waves - Stormy Sky with Glowing Clouds</title>
+    <title>2.5D Ocean Waves - Stormy Sky (v5)</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #info {
@@ -37,15 +37,11 @@
             transition: 0.2s;
         }
         .mode-toggle:hover { background: rgba(0,0,0,0.9); transform: scale(1.02); }
-        #stormBtn {
-            top: 80px;  /* เพิ่มระยะห่างจาก 70px -> 80px */
-            right: 20px;
-            background: #331100;
-        }
+        #stormBtn { top: 80px; right: 20px; background: #331100; }
         @media (max-width: 600px) {
             .mode-toggle { font-size: 12px; padding: 8px 14px; top: 12px; right: 12px; }
-            #stormBtn { top: 60px; font-size: 11px; padding: 6px 12px; }  /* เพิ่มจาก 56px -> 60px */
-            #info { font-size: 10px; bottom: 10px; }
+            #stormBtn { top: 60px; font-size: 11px; padding: 6px 12px; }
+            #info { font-size: 10px; bottom: 10px; background: rgba(0,0,0,0.3); opacity: 0.7; }
         }
         #debug {
             position: absolute;
@@ -59,50 +55,334 @@
             z-index: 20;
             pointer-events: none;
             border-radius: 4px;
-            display: none;  /* ซ่อนไว้ */
+            display: none;
         }
-        .developer-info {
-            display: none; /* hidden, moved into #info */
+        .dev-inline { display:block; font-family: monospace; font-size:11px; color:#ddd; margin-bottom:6px; }
+        .lil-gui { 
+            position: fixed !important; 
+            top: 12px !important; 
+            right: 12px !important; 
+            z-index: 1000 !important; 
+            pointer-events: auto !important; 
+            width: 280px !important; 
+            max-width: calc(100vw - 24px) !important;
+            max-height: calc(100vh - 24px) !important;
+            overflow-y: auto !important;
+            background: rgba(0,0,0,0.8) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 8px !important;
         }
-        /* inline developer text placed inside #info */
-        .dev-inline {
-            display: block;
+        .lil-gui .lil-gui {
+            position: relative !important;
+            top: auto !important;
+            right: auto !important;
+            width: 100% !important;
+            margin: 0 !important;
+            border: none !important;
+            background: transparent !important;
+        }
+        @media (min-width:900px) { .mode-toggle { left:20px; right:auto; top:20px; } #stormBtn { left:20px; right:auto; top:80px; } }
+        @media (max-width:600px) { .lil-gui { display:none !important; } }
+        
+        /* Tablet GUI positioning */
+        @media (min-width: 601px) and (max-width: 1024px) {
+            .lil-gui { top: 20px !important; left: 20px !important; right: auto !important; }
+        }
+        
+        /* Control Hints Styles */
+        .control-hints {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-family: monospace;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            z-index: 999;
+            transition: opacity 0.3s ease;
+            max-width: 200px;
+        }
+        
+        .control-hints:hover {
+            opacity: 0.7;
+        }
+        
+        .hint-icon {
+            position: relative;
+            min-width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Mouse Icon */
+        .mouse-icon {
+            position: relative;
+            width: 20px;
+            height: 28px;
+        }
+        
+        .mouse-body {
+            width: 20px;
+            height: 28px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        .mouse-wheel {
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 1px;
+            animation: mouseScroll 2s ease-in-out infinite;
+        }
+        
+        .mouse-click {
+            position: absolute;
+            top: -5px;
+            left: 2px;
+            width: 8px;
+            height: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 4px 4px 0 0;
+            background: rgba(255, 255, 255, 0.1);
+            animation: mouseClick 3s ease-in-out infinite;
+        }
+        
+        /* Touch Icon */
+        .touch-icon {
+            position: relative;
+            width: 24px;
+            height: 24px;
+        }
+        
+        .finger {
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            top: 6px;
+            left: 6px;
+            animation: touchMove 3s ease-in-out infinite;
+        }
+        
+        .finger-2 {
+            left: 16px;
+            animation-delay: 0.1s;
+            animation-name: touchMove2;
+        }
+        
+        /* Tablet Icon */
+        .tablet-icon {
+            position: relative;
+            width: 28px;
+            height: 20px;
+        }
+        
+        .tablet-body {
+            width: 28px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        .tablet-finger {
+            position: absolute;
+            width: 6px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 3px;
+            top: 6px;
+            left: 8px;
+            animation: tabletTouch 3s ease-in-out infinite;
+        }
+        
+        .tablet-finger-2 {
+            left: 16px;
+            animation-delay: 0.2s;
+            animation-name: tabletTouch2;
+        }
+        
+        /* Hybrid Icon (Mouse + Touch) */
+        .hybrid-icon {
+            position: relative;
+            width: 32px;
+            height: 28px;
+        }
+        
+        .hybrid-mouse {
+            position: absolute;
+            width: 16px;
+            height: 22px;
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            left: 0;
+            top: 3px;
+        }
+        
+        .hybrid-touch {
+            position: absolute;
+            width: 12px;
+            height: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.05);
+            right: 0;
+            top: 0;
+        }
+        
+        .hybrid-finger {
+            position: absolute;
+            width: 4px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 2px;
+            top: 5px;
+            left: 2px;
+            animation: hybridTouch 2.5s ease-in-out infinite;
+        }
+        
+        .hint-text {
+            line-height: 1.3;
             font-size: 11px;
-            color: #ddd;
-            margin-bottom: 6px;
-            opacity: 0.95;
+            color: rgba(255, 255, 255, 0.85);
         }
-
-        /* lil-gui overlay positioning so it sits above the top-right buttons */
-        .lil-gui {
-            position: absolute !important;
-            top: 12px !important;
-            right: 12px !important;
-            z-index: 1000 !important; /* well above buttons and other UI */
-            pointer-events: auto !important;
-            width: 260px;
-            max-width: calc(100% - 24px);
+        
+        /* Animations */
+        @keyframes mouseScroll {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(3px); }
         }
-
-        /* Desktop: move the two control buttons to the top-left on wide screens */
-        @media (min-width: 900px) {
-            .mode-toggle { left: 20px; right: auto; top: 20px; }
-            #stormBtn { left: 20px; right: auto; top: 80px; }
+        
+        @keyframes mouseClick {
+            0%, 90%, 100% { background: rgba(255, 255, 255, 0.1); }
+            5%, 15% { background: rgba(255, 255, 255, 0.4); }
         }
-
-        @media (max-width: 600px) {
-            /* Mobile: hide GUI to avoid menu/button overlap on small devices */
-            .lil-gui { display: none !important; }
+        
+        @keyframes touchMove {
+            0%, 100% { transform: translate(0, 0); opacity: 0.8; }
+            50% { transform: translate(8px, -4px); opacity: 1; }
+        }
+        
+        @keyframes touchMove2 {
+            0%, 100% { transform: translate(0, 0); opacity: 0.8; }
+            50% { transform: translate(-8px, -4px); opacity: 1; }
+        }
+        
+        @keyframes tabletTouch {
+            0%, 100% { transform: translate(0, 0); opacity: 0.8; }
+            50% { transform: translate(6px, -2px); opacity: 1; }
+        }
+        
+        @keyframes tabletTouch2 {
+            0%, 100% { transform: translate(0, 0); opacity: 0.8; }
+            50% { transform: translate(-6px, -2px); opacity: 1; }
+        }
+        
+        @keyframes hybridTouch {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        /* Responsive layout for small screens */
+        @media (max-width: 480px) {
+            .control-hints {
+                bottom: 20px; /* align กับ info bar */
+                right: 15px; /* วางขวาให้ไม่ทับ info bar */
+                top: auto; /* ยกเลิก top positioning */
+                left: auto; /* ยกเลิก left positioning */
+                padding: 8px 10px;
+                font-size: 10px;
+                max-width: 140px;
+                flex-direction: column; /* เปลี่ยนเป็น column */
+                text-align: center;
+                gap: 8px;
+                background: rgba(0,0,0,0.3); /* ลด opacity เหมือน info bar */
+                opacity: 0.7; /* เพิ่ม opacity ทั้งอิลิเมนต์ */
+            }
+            
+            .hint-icon {
+                min-width: auto;
+                height: 24px;
+                margin: 0 auto;
+            }
+            
+            .hint-text {
+                font-size: 9px;
+                line-height: 1.2;
+                text-align: center;
+            }
+        }
+        
+        /* Medium screens adjustment */
+        @media (max-width: 768px) and (min-width: 481px) {
+            .control-hints {
+                bottom: 20px; /* align กับ info bar เหมือน mobile */
+                right: 15px;
+                padding: 10px 14px;
+                font-size: 11px;
+                max-width: 180px;
+                background: rgba(0,0,0,0.3); /* ใส่ background เหมือน mobile */
+                opacity: 0.7; /* ใส่ opacity เหมือน mobile */
+            }
         }
     </style>
 </head>
 <body>
     <div id="info"><span class="dev-inline">👨‍💻 Developer: likit_se@irpc.co.th</span>⛈️ 2.5D Ocean | Stormy Sky | <span style="color:#ff8888;">Glowing Clouds + Lightning</span></div>
     <button id="daynightBtn" class="mode-toggle">🌙 กลางคืน</button>
-    <button id="stormBtn" class="mode-toggle" style="color: #ffaa66;">⛈️ เปิดพายุฝน</button>
+    <button id="stormBtn" class="mode-toggle" style="color:#ffaa66;">⛈️ เปิดพายุฝน</button>
     <div id="debug">กำลังโหลด...</div>
-
+        
+        <!-- Control Hints -->
+        <div id="controlHints" class="control-hints">
+            <div class="hint-icon">
+                <div class="mouse-icon" id="mouseIcon">
+                    <div class="mouse-body"></div>
+                    <div class="mouse-wheel"></div>
+                    <div class="mouse-click"></div>
+                </div>
+                <div class="touch-icon" id="touchIcon" style="display: none;">
+                    <div class="finger"></div>
+                    <div class="finger finger-2"></div>
+                </div>
+                <div class="tablet-icon" id="tabletIcon" style="display: none;">
+                    <div class="tablet-body"></div>
+                    <div class="tablet-finger"></div>
+                    <div class="tablet-finger tablet-finger-2"></div>
+                </div>
+                <div class="hybrid-icon" id="hybridIcon" style="display: none;">
+                    <div class="hybrid-mouse"></div>
+                    <div class="hybrid-touch">
+                        <div class="hybrid-finger"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hint-text">
+                <span id="pcHint">คลิกซ้าย + ลาก เพื่อหมุนดู<br>ลูกกลิ้ง เพื่อซูม</span>
+                <span id="mobileHint" style="display: none;">แตะค้าง + ลาก เพื่อหมุนดู<br>2 นิ้ว เพื่อซูม</span>
+                <span id="tabletHint" style="display: none;">แตะค้าง + ลาก เพื่อหมุนดู<br>ปิ้นช์ซูม หรือ 2 นิ้ว</span>
+                <span id="hybridHint" style="display: none;">เมาส์/แตะ + ลาก เพื่อหมุน<br>ลูกกลิ้ง/ปิ้นช์ ซูม</span>
+            </div>
+        </div>
     <script type="importmap">
         {
             "imports": {
@@ -121,15 +401,154 @@
         import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.18/dist/lil-gui.esm.min.js';
 
         const debugDiv = document.getElementById('debug');
-        function log(msg) { console.log(msg); if(debugDiv) debugDiv.innerHTML = msg; }
+        
+        // Debounced log function to prevent reflow
+        let logTimeout;
+        function log(msg) { 
+            console.log(msg); 
+            if(debugDiv) {
+                clearTimeout(logTimeout);
+                logTimeout = setTimeout(() => {
+                    debugDiv.textContent = msg;
+                }, 16); // ~60fps
+            }
+        }
 
-        // Movement bounds and buoy position for fish (copied from fish scene)
+        // Performance and behavior configuration
+        const CONFIG = {
+            ocean: {
+                segments: window.innerWidth < 768 ? 100 : 200, // Mobile optimization
+                waveComplexity: window.innerWidth < 768 ? 4 : 8
+            },
+            fish: {
+                maxCount: window.innerWidth < 768 ? 8 : 15,
+                turnSpeed: 0.055,
+                targetThreshold: 3.8,
+                swimBob: 0.007
+            },
+            particles: {
+                count: window.innerWidth < 768 ? 800 : 1800
+            },
+            rain: {
+                count: window.innerWidth < 768 ? 600 : 1200,
+                fallSpeed: 4
+            }
+        };
+        
+        // Initialize control hints based on device
+        function initControlHints() {
+            const mouseIcon = document.getElementById('mouseIcon');
+            const touchIcon = document.getElementById('touchIcon');
+            const tabletIcon = document.getElementById('tabletIcon');
+            const hybridIcon = document.getElementById('hybridIcon');
+            const pcHint = document.getElementById('pcHint');
+            const mobileHint = document.getElementById('mobileHint');
+            const tabletHint = document.getElementById('tabletHint');
+            const hybridHint = document.getElementById('hybridHint');
+            
+            // Enhanced device detection
+            const hasTouch = 'ontouchstart' in window;
+            const hasMouse = window.matchMedia('(pointer: fine)').matches;
+            const screenWidth = window.innerWidth;
+            const userAgent = navigator.userAgent.toLowerCase();
+            
+            // Device classification
+            let deviceType = 'desktop';
+            
+            if (hasTouch && hasMouse) {
+                // Hybrid device (touch laptop, surface, etc.)
+                deviceType = 'hybrid';
+            } else if (hasTouch) {
+                if (screenWidth >= 768 && screenWidth <= 1024) {
+                    // Tablet range
+                    deviceType = 'tablet';
+                } else if (screenWidth < 768) {
+                    // Mobile phone
+                    deviceType = 'mobile';
+                } else {
+                    // Large touch screen
+                    deviceType = 'tablet';
+                }
+            } else {
+                // Traditional desktop/laptop
+                deviceType = 'desktop';
+            }
+            
+            // Override for specific devices
+            if (userAgent.includes('ipad') || userAgent.includes('tablet')) {
+                deviceType = 'tablet';
+            }
+            
+            // Hide all icons and hints first
+            [mouseIcon, touchIcon, tabletIcon, hybridIcon].forEach(icon => {
+                if (icon) icon.style.display = 'none';
+            });
+            [pcHint, mobileHint, tabletHint, hybridHint].forEach(hint => {
+                if (hint) hint.style.display = 'none';
+            });
+            
+            // Show appropriate icon and hint
+            switch (deviceType) {
+                case 'desktop':
+                    if (mouseIcon && pcHint) {
+                        mouseIcon.style.display = 'block';
+                        pcHint.style.display = 'block';
+                    }
+                    break;
+                case 'mobile':
+                    if (touchIcon && mobileHint) {
+                        touchIcon.style.display = 'block';
+                        mobileHint.style.display = 'block';
+                    }
+                    break;
+                case 'tablet':
+                    if (tabletIcon && tabletHint) {
+                        tabletIcon.style.display = 'block';
+                        tabletHint.style.display = 'block';
+                    }
+                    break;
+                case 'hybrid':
+                    if (hybridIcon && hybridHint) {
+                        hybridIcon.style.display = 'block';
+                        hybridHint.style.display = 'block';
+                    }
+                    break;
+            }
+            
+            // Auto-hide hints after user interaction
+            let interactionCount = 0;
+            const hints = document.getElementById('controlHints');
+            
+            const hideHints = () => {
+                interactionCount++;
+                if (interactionCount > 3) {
+                    hints.style.opacity = '0.3';
+                    setTimeout(() => {
+                        if (hints.style.opacity === '0.3') {
+                            hints.style.display = 'none';
+                        }
+                    }, 3000);
+                }
+            };
+            
+            // Listen for user interactions
+            document.addEventListener('mousedown', hideHints);
+            document.addEventListener('touchstart', hideHints);
+            document.addEventListener('wheel', hideHints);
+            
+            // Debug log for development
+            console.log(`Device detected: ${deviceType} (touch: ${hasTouch}, mouse: ${hasMouse}, width: ${screenWidth})`);
+        }
+
+        // Movement bounds and buoy position for fish
         const BOUNDS = { x: { min: -24, max: 24 }, z: { min: -22, max: 22 }, y: { min: -7, max: -1.5 } };
+
+        // 聚: Buoy / Lighthouse position — fish will swim around this point
         const BUOY_POS = new THREE.Vector3(5, -2.5, -4);
 
-        // ========== 1. OceanPlane (คลื่น) - เหมือนเดิม ==========
+        // ========== 1. OceanPlane (คลื่น) ==========
         class OceanPlane {
-            constructor(width = 22, depth = 22, segments = 200) {
+            constructor(width = 24, depth = 24, segments = CONFIG.ocean.segments) {
                 this.geometry = this._createGeometry(width, depth, segments);
                 this.material = this._createMaterial();
                 this.mesh = new THREE.Mesh(this.geometry, this.material);
@@ -150,50 +569,59 @@
             _createMaterial() {
                 const uniforms = {
                     uTime: { value: 0 },
-                    uColorDeep: { value: new THREE.Color(0x001a2e) },      // เข้มมากขึ้น (จาก 0x023e5a)
-                    uColorMid: { value: new THREE.Color(0x034a6b) },       // เข้มขึ้น (จาก 0x0a6b8e)
-                    uColorShallow: { value: new THREE.Color(0x2a8db3) },   // ปานกลาง (จาก 0x3b9ec7)
-                    uColorFoam: { value: new THREE.Color(0xc0e8f5) }       // อ่อนลง (จาก 0xe0f7ff)
+                    uColorDeep: { value: new THREE.Color(0x023e5a) },
+                    uColorMid: { value: new THREE.Color(0x0a6b8e) },
+                    uColorShallow: { value: new THREE.Color(0x3b9ec7) },
+                    uColorFoam: { value: new THREE.Color(0xe0f7ff) }
                 };
                 const vs = `
                     uniform float uTime;
                     varying float vElevation;
-                    varying vec3 vPosition;
+                    varying vec3 vNormal;
                     void main() {
                         vec3 pos = position;
                         float x = pos.x, z = pos.z;
                         float y = 0.0;
+                        
+                        // Primary waves (always computed)
                         y += sin(x * 0.55 + uTime) * 0.22;
                         y += sin(x * 1.25 - uTime * 1.4) * 0.12;
                         y += sin(z * 0.8 + uTime * 0.9) * 0.18;
                         y += sin(z * 1.8 + uTime * 1.2) * 0.1;
+                        
+                        // Secondary waves (conditional for mobile performance)
+                        ${CONFIG.ocean.waveComplexity >= 8 ? `
                         y += sin((x * 0.9 + z * 0.9) * 1.1 + uTime * 1.6) * 0.13;
                         y += sin((x * 1.7 - z * 1.3) * 0.8 + uTime * 2.0) * 0.09;
                         y += sin(x * 3.2 + uTime * 2.5) * 0.05;
-                        y += sin(z * 3.5 - uTime * 2.2) * 0.05;
+                        y += sin(z * 3.5 - uTime * 2.2) * 0.05;` : ''}
+                        
                         pos.y = y;
-                        vElevation = (y + 0.9) / 1.8;  // เพิ่มช่วงจาก 1.4 -> 1.8 เพื่อความลึก
-                        vPosition = pos;
+                        
+                        // Calculate normal for better lighting
+                        float dx = cos(x * 0.55 + uTime) * 0.55 * 0.22;
+                        float dz = cos(z * 0.8 + uTime * 0.9) * 0.8 * 0.18;
+                        vNormal = normalize(vec3(-dx, 1.0, -dz));
+                        
+                        vElevation = (y + 0.7) / 1.4;
                         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
                     }
                 `;
                 const fs = `
                     uniform vec3 uColorDeep, uColorMid, uColorShallow, uColorFoam;
                     varying float vElevation;
-                    varying vec3 vPosition;
+                    varying vec3 vNormal;
                     void main() {
                         float t = clamp(vElevation, 0.0, 1.0);
                         vec3 color;
-                        // ไล่เฉดความลึกที่ชัดเจนขึ้น
-                        if (t < 0.3) color = mix(uColorDeep, uColorMid, t/0.3);
-                        else if (t < 0.6) color = mix(uColorMid, uColorShallow, (t-0.3)/0.3);
-                        else if (t < 0.85) color = mix(uColorShallow, uColorFoam, (t-0.6)/0.25);
-                        else color = uColorFoam;
+                        if (t < 0.4) color = mix(uColorDeep, uColorMid, t/0.4);
+                        else if (t < 0.75) color = mix(uColorMid, uColorShallow, (t-0.4)/0.35);
+                        else color = mix(uColorShallow, uColorFoam, (t-0.75)/0.25);
                         
-                        // เพิ่มความเข้มตามระยะห่างจากศูนย์กลาง (depth fade)
-                        float dist = length(vPosition.xz) / 12.0;
-                        float depthFactor = 1.0 - smoothstep(0.3, 1.0, dist) * 0.3;
-                        color *= depthFactor;
+                        // Enhanced lighting with normal
+                        vec3 lightDir = normalize(vec3(0.5, 1.0, 0.5));
+                        float lightIntensity = max(0.3, dot(vNormal, lightDir));
+                        color *= lightIntensity;
                         
                         float sparkle = smoothstep(0.75, 0.95, t) * 0.5;
                         color += vec3(sparkle * 0.4, sparkle * 0.5, sparkle * 0.7);
@@ -208,7 +636,7 @@
 
         // ========== 2. ParticleSystem (ประกายแสงบนน้ำ) ==========
         class ParticleSystem {
-            constructor(count = 1800, range = 20) {
+            constructor(count = CONFIG.particles.count, range = 22) {
                 const geom = new THREE.BufferGeometry();
                 const pos = new Float32Array(count * 3);
                 for (let i = 0; i < count; i++) {
@@ -227,7 +655,7 @@
             }
         }
 
-        // ========== 3. Lighthouse (ประภาคาร) - ปรับเพิ่มความสว่าง ==========
+        // ========== 3. Lighthouse (ประภาคาร) ==========
         class Lighthouse {
             constructor(x = 6, z = -5) {
                 this.group = new THREE.Group();
@@ -406,58 +834,36 @@
             }
         }
 
-        // ========== 4. CloudSystem (เมฆพร้อมแสงในเมฆ) ==========
+        // ========== 4. CloudSystem (เมฆ) ==========
         class CloudSystem {
-            constructor(scene, count = 12) {
+            constructor(scene, count = 14) {
                 this.scene = scene;
                 this.clouds = [];
-                this.lightningFlash = 0;
                 this.flashIntensity = 0;
-                this.nextFlashTime = Math.random() * 5 + 3; // สุ่มเวลาฟ้าผ่า 3-8 วินาที
+                this.nextFlashTime = Math.random() * 5 + 3;
                 
-                // สร้างเมฆหลายก้อน
                 for (let i = 0; i < count; i++) {
                     const cloudGroup = this._createCloud();
-                    // ตำแหน่งสุ่มในรัศมี 25-40 หน่วย, ความสูง 6-12
                     const radius = 20 + Math.random() * 20;
                     const angle = Math.random() * Math.PI * 2;
                     const x = Math.cos(angle) * radius;
                     const z = Math.sin(angle) * radius;
                     const y = 5 + Math.random() * 6;
                     cloudGroup.position.set(x, y, z);
-                    
-                    // สุ่มขนาดเมฆ
                     const scale = 0.8 + Math.random() * 1.2;
                     cloudGroup.scale.set(scale, scale * 0.7, scale);
-                    
-                    // เก็บค่า emissive intensity พื้นฐาน
                     cloudGroup.userData = {
                         baseEmissive: 0.05 + Math.random() * 0.1,
                         flickerSpeed: 0.5 + Math.random() * 1.5,
-                        flickerPhase: Math.random() * Math.PI * 2,
-                        driftSpeed: 0.05 + Math.random() * 0.1,  // ความเร็วลอย
-                        driftAngle: Math.random() * Math.PI * 2,  // ทิศทางลอย
-                        initialX: x,
-                        initialZ: z
+                        flickerPhase: Math.random() * Math.PI * 2
                     };
-                    
                     this.scene.add(cloudGroup);
                     this.clouds.push(cloudGroup);
                 }
-                
-                // เพิ่มเมฆพิเศษก้อนใหญ่ใกล้กล้อง
                 const bigCloud = this._createCloud(true);
                 bigCloud.position.set(-15, 8, -12);
                 bigCloud.scale.set(2.5, 1.8, 2);
-                bigCloud.userData = { 
-                    baseEmissive: 0.15, 
-                    flickerSpeed: 0.8, 
-                    flickerPhase: 0,
-                    driftSpeed: 0.03,
-                    driftAngle: Math.PI * 0.5,
-                    initialX: -15,
-                    initialZ: -12
-                };
+                bigCloud.userData = { baseEmissive: 0.15, flickerSpeed: 0.8, flickerPhase: 0 };
                 this.scene.add(bigCloud);
                 this.clouds.push(bigCloud);
             }
@@ -465,15 +871,11 @@
             _createCloud(isBig = false) {
                 const group = new THREE.Group();
                 const color = isBig ? 0x886e6e : 0xaaaaaa;
-                const darkColor = 0x665555;
                 const glowColor = 0xffaa88;
-                
-                // สร้าง sphere หลายๆ ลูกประกอบเป็นเมฆ
                 const parts = isBig ? [1.2, 1.0, 0.9, 0.8, 0.7] : [0.9, 0.8, 0.7, 0.6, 0.5];
                 const offsets = isBig 
                     ? [[0,0,0], [1.0,0.2,0.8], [-0.9,0.1,0.7], [0.5,0.6,0.4], [-0.4,0.5,-0.6], [0.2,-0.3,1.1], [-0.7,-0.2,-0.5]]
                     : [[0,0,0], [0.8,0.1,0.6], [-0.7,0,0.5], [0.4,0.5,0.3], [-0.3,0.4,-0.5], [0.1,-0.2,0.9]];
-                
                 parts.forEach((size, idx) => {
                     const offset = offsets[idx % offsets.length];
                     const sphereMat = new THREE.MeshStandardMaterial({
@@ -481,54 +883,34 @@
                         emissive: glowColor,
                         emissiveIntensity: 0.05,
                         roughness: 0.7,
-                        metalness: 0.05,
-                        flatShading: false
+                        metalness: 0.05
                     });
                     const sphere = new THREE.Mesh(new THREE.SphereGeometry(size, 16, 16), sphereMat);
                     sphere.position.set(offset[0], offset[1] + 0.2, offset[2]);
                     group.add(sphere);
                 });
-                
                 return group;
             }
             
             update(time, isStormActive) {
-                // อัปเดตเมฆแต่ละก้อน
-                this.clouds.forEach((cloud, index) => {
+                this.clouds.forEach(cloud => {
                     const data = cloud.userData;
-                    
-                    // เคลื่อนที่เมฆแบบค่อยๆ ลอย
-                    const driftX = Math.sin(time * data.driftSpeed + data.driftAngle) * 0.02;
-                    const driftZ = Math.cos(time * data.driftSpeed + data.driftAngle) * 0.02;
-                    cloud.position.x = data.initialX + driftX * 50;
-                    cloud.position.z = data.initialZ + driftZ * 50;
-                    
-                    // ลอยขึ้นลงเล็กน้อย
-                    cloud.position.y += Math.sin(time * 0.3 + index) * 0.003;
-                    
-                    // อัปเดตแสงในเมฆ (flickering)
                     let intensity = data.baseEmissive;
                     if (isStormActive) {
-                        // ช่วงพายุ: เรืองแรงขึ้นและกระพริบเร็ว
                         intensity += 0.15 + Math.sin(time * data.flickerSpeed + data.flickerPhase) * 0.1;
                         intensity = Math.min(0.5, intensity);
                     } else {
                         intensity += Math.sin(time * 0.5 + data.flickerPhase) * 0.05;
                     }
-                    
-                    // ฟ้าผ่า: เพิ่มความสว่างจ้าทันที
                     if (this.flashIntensity > 0) {
                         intensity += this.flashIntensity * 1.5;
                     }
-                    
                     cloud.children.forEach(child => {
                         if (child.isMesh && child.material) {
                             child.material.emissiveIntensity = Math.max(0.05, intensity);
                         }
                     });
                 });
-                
-                // ลด flash intensity
                 if (this.flashIntensity > 0) {
                     this.flashIntensity *= 0.95;
                     if (this.flashIntensity < 0.01) this.flashIntensity = 0;
@@ -541,16 +923,12 @@
                 return this.flashIntensity;
             }
             
-            getFlashIntensity() {
-                return this.flashIntensity;
-            }
+            getFlashIntensity() { return this.flashIntensity; }
         }
 
-        // ========== 5. RainSystem (ฝนตกปรอยๆ) ==========
+        // ========== 5. RainSystem (ฝน) ==========
         class RainSystem {
-            constructor(scene, count = 800) {
-                this.particles = [];
-                this.isRaining = false;
+            constructor(scene, count = CONFIG.rain.count) {
                 const geometry = new THREE.BufferGeometry();
                 const positions = new Float32Array(count * 3);
                 for (let i = 0; i < count; i++) {
@@ -559,24 +937,18 @@
                     positions[i*3+2] = (Math.random() - 0.5) * 30 - 5;
                 }
                 geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                const material = new THREE.PointsMaterial({
-                    color: 0xaaddff,
-                    size: 0.08,
-                    transparent: true,
-                    opacity: 0,
-                    blending: THREE.AdditiveBlending
-                });
+                const material = new THREE.PointsMaterial({ color: 0xaaddff, size: 0.08, transparent: true, opacity: 0, blending: THREE.AdditiveBlending });
                 this.points = new THREE.Points(geometry, material);
                 scene.add(this.points);
                 this.count = count;
                 this.originalPositions = positions.slice();
+                this.isRaining = false;
             }
             
             setRainActive(active) {
                 this.isRaining = active;
                 this.points.material.opacity = active ? 0.6 : 0;
                 if (!active) {
-                    // รีเซ็ตตำแหน่งฝน
                     const posAttr = this.points.geometry.attributes.position.array;
                     for (let i = 0; i < this.count; i++) {
                         posAttr[i*3] = this.originalPositions[i*3];
@@ -591,7 +963,7 @@
                 if (!this.isRaining) return;
                 const positions = this.points.geometry.attributes.position.array;
                 for (let i = 0; i < this.count; i++) {
-                    positions[i*3+1] -= deltaTime * 4; // ตกเร็ว
+                    positions[i*3+1] -= deltaTime * CONFIG.rain.fallSpeed;
                     if (positions[i*3+1] < 0) {
                         positions[i*3+1] = 12 + Math.random() * 3;
                         positions[i*3] = (Math.random() - 0.5) * 40;
@@ -602,37 +974,121 @@
             }
         }
 
-        // ========== 6. Fish (from fish2-init) ==========
+        // ========== 6. Fish (optimized with shared geometry) ==========
+        // Shared geometries and materials to prevent memory leaks
+        const FishGeometryCache = {
+            body: null,
+            eyeWhite: null,
+            eyeBlack: null,
+            tail: null,
+            dorsal: null,
+            ventral: null,
+            pectoral: null,
+            
+            getBodyGeometry(size) {
+                if (!this.body) {
+                    this.body = new THREE.SphereGeometry(1, 32, 24);
+                }
+                return this.body;
+            },
+            
+            getEyeWhiteGeometry(size) {
+                if (!this.eyeWhite) {
+                    this.eyeWhite = new THREE.SphereGeometry(0.11, 16, 16);
+                }
+                return this.eyeWhite;
+            },
+            
+            getEyeBlackGeometry(size) {
+                if (!this.eyeBlack) {
+                    this.eyeBlack = new THREE.SphereGeometry(0.065, 16, 16);
+                }
+                return this.eyeBlack;
+            }
+        };
+        
+        const FishMaterialCache = {
+            body: new Map(),
+            fin: new Map(),
+            eye: new Map(),
+            
+            getBodyMaterial(color) {
+                if (!this.body.has(color)) {
+                    this.body.set(color, new THREE.MeshStandardMaterial({ 
+                        color: color, 
+                        roughness: 0.25, 
+                        metalness: 0.3, 
+                        emissive: 0x221100 
+                    }));
+                }
+                return this.body.get(color);
+            },
+            
+            getFinMaterial(color) {
+                if (!this.fin.has(color)) {
+                    this.fin.set(color, new THREE.MeshStandardMaterial({ 
+                        color: color, 
+                        roughness: 0.35, 
+                        side: THREE.DoubleSide, 
+                        polygonOffset: true, 
+                        polygonOffsetFactor: -1, 
+                        polygonOffsetUnits: -4 
+                    }));
+                }
+                return this.fin.get(color);
+            },
+            
+            getEyeMaterial(isWhite) {
+                const key = isWhite ? 'eyeWhite' : 'eyeBlack';
+                if (!this.eye.has(key)) {
+                    this.eye.set(key, new THREE.MeshStandardMaterial({ 
+                        color: isWhite ? 0xffffff : 0x000000 
+                    }));
+                }
+                return this.eye.get(key);
+            }
+        };
+
         // Use the more detailed Fish class (thin-plate fins, crescent pectorals) and a simple system wrapper
         class Fish {
             constructor(color, size, scene) {
                 this.group = new THREE.Group();
                 this.size = size;
-                // speed in world units per second (slower, realistic swim)
-                this.speed = 0.9 + Math.random() * 0.9; // ~0.9 - 1.8 units/sec
+                this.speed = 0.9 + Math.random() * 0.9;
+                this._tempVec = new THREE.Vector3(); // Reuse vector for calculations
 
-                const bodyMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.25, metalness: 0.3, emissive: 0x221100 });
-                // enable polygon offset on fins to avoid z-fighting with the body
-                const finMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.35, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 });
+                const bodyMat = FishMaterialCache.getBodyMaterial(color);
+                const finMat = FishMaterialCache.getFinMaterial(color);
 
                 // ===== 1. ลำตัว (ทรงรีแบน) =====
-                const bodyGeo = new THREE.SphereGeometry(size, 32, 24);
+                const bodyGeo = FishGeometryCache.getBodyGeometry(size);
                 const body = new THREE.Mesh(bodyGeo, bodyMat);
-                body.scale.set(1.65, 0.7, 0.3);
+                body.scale.set(size * 1.65, size * 0.7, size * 0.3);
                 this.group.add(body);
 
                 // ===== 2. ตา =====
-                const eyeWhite = new THREE.Mesh(new THREE.SphereGeometry(size * 0.11, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                const eyeWhiteGeo = FishGeometryCache.getEyeWhiteGeometry(size);
+                const eyeBlackGeo = FishGeometryCache.getEyeBlackGeometry(size);
+                const eyeWhiteMat = FishMaterialCache.getEyeMaterial(true);
+                const eyeBlackMat = FishMaterialCache.getEyeMaterial(false);
+                
+                const eyeWhite = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+                eyeWhite.scale.setScalar(size);
                 eyeWhite.position.set(size * 0.85, size * 0.18, size * 0.21);
                 this.group.add(eyeWhite);
-                const eyeBlack = new THREE.Mesh(new THREE.SphereGeometry(size * 0.065, 16, 16), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+                
+                const eyeBlack = new THREE.Mesh(eyeBlackGeo, eyeBlackMat);
+                eyeBlack.scale.setScalar(size);
                 eyeBlack.position.set(size * 0.92, size * 0.14, size * 0.23);
                 this.group.add(eyeBlack);
 
-                const eyeWhiteR = new THREE.Mesh(new THREE.SphereGeometry(size * 0.11, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                const eyeWhiteR = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+                eyeWhiteR.scale.setScalar(size);
                 eyeWhiteR.position.set(size * 0.85, size * 0.18, -size * 0.21);
                 this.group.add(eyeWhiteR);
-                const eyeBlackR = new THREE.Mesh(new THREE.SphereGeometry(size * 0.065, 16, 16), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+                
+                const eyeBlackR = new THREE.Mesh(eyeBlackGeo, eyeBlackMat);
+                eyeBlackR.scale.setScalar(size);
                 eyeBlackR.position.set(size * 0.92, size * 0.14, -size * 0.23);
                 this.group.add(eyeBlackR);
 
@@ -723,32 +1179,48 @@
             }
 
             setNewTarget() {
-                // เป้าหมายใหม่ใกล้ทุ่น เพื่อให้ปลาโฟกัสแถวเดียวกับทุ่น
-                // targets spread wider around buoy
-                this.target = new THREE.Vector3(
-                    BUOY_POS.x + (Math.random() - 0.5) * 12,
-                    Math.max(BOUNDS.y.min, Math.min(BOUNDS.y.max, BUOY_POS.y + (Math.random() - 0.5) * 2.5)),
-                    BUOY_POS.z + (Math.random() - 0.5) * 12
-                );
+                // Check if target would be outside bounds before setting
+                let newTarget;
+                let attempts = 0;
+                do {
+                    newTarget = {
+                        x: BUOY_POS.x + (Math.random() - 0.5) * 12,
+                        y: Math.max(BOUNDS.y.min + 0.5, Math.min(BOUNDS.y.max - 0.5, BUOY_POS.y + (Math.random() - 0.5) * 2.5)),
+                        z: BUOY_POS.z + (Math.random() - 0.5) * 12
+                    };
+                    attempts++;
+                } while (attempts < 5 && (
+                    newTarget.x < BOUNDS.x.min + 1 || newTarget.x > BOUNDS.x.max - 1 ||
+                    newTarget.z < BOUNDS.z.min + 1 || newTarget.z > BOUNDS.z.max - 1
+                ));
+                
+                if (!this.target) this.target = new THREE.Vector3();
+                this.target.set(newTarget.x, newTarget.y, newTarget.z);
             }
 
             update(t, delta, isPaused) {
                 if (isPaused) return;
 
-                const direction = new THREE.Vector3().subVectors(this.target, this.group.position).normalize();
-                const angleToTarget = Math.atan2(direction.x, direction.z);
-                // smooth rotation toward target
-                const angDiff = ((angleToTarget - this.group.rotation.y + Math.PI) % (Math.PI * 2)) - Math.PI;
-                this.group.rotation.y += angDiff * 0.055;
+                this._tempVec.subVectors(this.target, this.group.position).normalize();
+                const angleToTarget = Math.atan2(this._tempVec.x, this._tempVec.z);
+                // Safe angle difference to prevent jitter
+                let angDiff = angleToTarget - this.group.rotation.y;
+                angDiff = Math.atan2(Math.sin(angDiff), Math.cos(angDiff));
+                this.group.rotation.y += angDiff * CONFIG.fish.turnSpeed;
 
                 const forwardX = Math.sin(this.group.rotation.y);
                 const forwardZ = Math.cos(this.group.rotation.y);
-                // move using delta (units/sec * seconds)
                 this.group.position.x += forwardX * this.speed * delta;
                 this.group.position.z += forwardZ * this.speed * delta;
-                // vertical approach scaled to seconds
-                this.group.position.y += direction.y * 0.6 * delta;
+                this.group.position.y += this._tempVec.y * 0.6 * delta;
 
+                // Smooth boundary clamping to prevent jitter
+                const margin = 1.0;
+                if (this.group.position.x < BOUNDS.x.min + margin || this.group.position.x > BOUNDS.x.max - margin ||
+                    this.group.position.z < BOUNDS.z.min + margin || this.group.position.z > BOUNDS.z.max - margin) {
+                    this.setNewTarget(); // Get new target before hitting boundary
+                }
+                
                 this.group.position.x = Math.max(BOUNDS.x.min, Math.min(BOUNDS.x.max, this.group.position.x));
                 this.group.position.z = Math.max(BOUNDS.z.min, Math.min(BOUNDS.z.max, this.group.position.z));
                 this.group.position.y = Math.max(BOUNDS.y.min, Math.min(BOUNDS.y.max, this.group.position.y));
@@ -758,16 +1230,18 @@
                 }
 
                 // gentle bob scaled by time
-                this.group.position.y += Math.sin(t * 3.8) * 0.007;
+                this.group.position.y += Math.sin(t * 3.8) * CONFIG.fish.swimBob;
 
-                if (this.group.position.distanceTo(this.target) < 3.8 || Math.random() < 0.004) {
+                // Use squared distance to avoid expensive sqrt
+                const distSq = this.group.position.distanceToSquared(this.target);
+                if (distSq < (CONFIG.fish.targetThreshold * CONFIG.fish.targetThreshold) || Math.random() < 0.004) {
                     this.setNewTarget();
                 }
             }
         }
 
         class FishSystem {
-            constructor(scene, count = 15) {
+            constructor(scene, count = CONFIG.fish.maxCount) {
                 this.scene = scene;
                 this.fishes = [];
                 const colors = [0xff6666, 0x66ff66, 0x6666ff, 0xffaa66, 0xff66ff];
@@ -792,7 +1266,8 @@
                 this.fishes.forEach(f => f.update(time, delta, false));
             }
         }
-        // ========== 6. Main App ==========
+        
+        // ========== 7. Main App ==========
         class OceanSceneApp {
             constructor() {
                 this.scene = new THREE.Scene();
@@ -811,10 +1286,14 @@
                 this.isStormActive = false;
                 this.lastTime = 0;
                 this.lightningTimer = 0;
+                this.lightningIntensity = 0.6; // For smooth transition
+                this.targetLightningIntensity = 0.6;
+                
+                // Reduced motion support
+                this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             }
             
             init() {
-                // ตั้งค่าฉาก
                 this.scene.background = new THREE.Color(0x1a2a4a);
                 this.scene.fog = new THREE.FogExp2(0x1a2a4a, 0.015);
                 
@@ -827,7 +1306,15 @@
                 this.renderer.toneMappingExposure = 1.2;
                 document.body.appendChild(this.renderer.domElement);
                 
-                // Controls
+                // WebGL context lost handling
+                this.renderer.domElement.addEventListener('webglcontextlost', (e) => {
+                    e.preventDefault();
+                    log("⚠️ WebGL context lost - กรุณารีโหลดหน้าเว็บ");
+                    if (confirm("WebGL หยุดทำงาน\nต้องการรีโหลดหน้าเว็บไหม?")) {
+                        location.reload();
+                    }
+                }, false);
+                
                 const controls = new OrbitControls(this.camera, this.renderer.domElement);
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.05;
@@ -835,65 +1322,121 @@
                 controls.target.set(4, 1.5, -3);
                 this.controls = controls;
                 
-                // แสง
                 this.ambientLight = new THREE.AmbientLight(0x335588, 0.45);
                 this.scene.add(this.ambientLight);
                 this.directionalLight = new THREE.DirectionalLight(0xccaa88, 0.6);
                 this.directionalLight.position.set(5, 12, 8);
                 this.scene.add(this.directionalLight);
                 
-                // วัตถุ - Optimized
-                this.ocean = new OceanPlane(24, 24, 150);  // ลด segments จาก 200 -> 150
+                this.ocean = new OceanPlane(24, 24, CONFIG.ocean.segments);
                 this.ocean.addToScene(this.scene);
-                this.particles = new ParticleSystem(1200, 22);  // ลด particles จาก 1800 -> 1200
+                this.particles = new ParticleSystem(CONFIG.particles.count, 22);
                 this.particles.addToScene(this.scene);
                 this.lighthouse = new Lighthouse(5, -4);
                 this.lighthouse.addToScene(this.scene);
                 
-                // ระบบเมฆและฝน - Optimized
-                this.cloudSystem = new CloudSystem(this.scene, 10);  // ลด clouds จาก 14 -> 10
-                this.rainSystem = new RainSystem(this.scene, 800);  // ลด rain จาก 1200 -> 800
-                // Fish system: spawn fish around the lighthouse/buoy
-                this.fishSystem = new FishSystem(this.scene, 15);
+                this.cloudSystem = new CloudSystem(this.scene, 14);
+                this.rainSystem = new RainSystem(this.scene, CONFIG.rain.count);
+                this.fishSystem = new FishSystem(this.scene, CONFIG.fish.maxCount);
                 
-                // Bloom effect - Optimized
+                // Bloom effect - ตั้งค่า threshold = 1 ตามที่ขอ
                 this.composer = new EffectComposer(this.renderer);
                 this.composer.addPass(new RenderPass(this.scene, this.camera));
-                this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.5, 1.0);
+                this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.6, 1.0);
                 this.composer.addPass(this.bloomPass);
                 
-                // GUI
+                // GUI with organized folders
                 this.settings = {
+                    // Performance
+                    oceanSegments: CONFIG.ocean.segments,
+                    particleCount: CONFIG.particles.count,
+                    fishCount: CONFIG.fish.maxCount,
+                    
+                    // Bloom
                     bloomEnabled: true,
-                    bloomStrength: 1.0,
-                    bloomRadius: 0.5,
-                    bloomThreshold: 1.0,  // เปลี่ยนเป็น 1.0
+                    bloomStrength: 1.2,
+                    bloomRadius: 0.6,
+                    bloomThreshold: 1.0,
+                    
+                    // Scene
+                    dayNightMode: 'Night',
+                    stormMode: false
                 };
+                
                 const gui = new GUI();
-                gui.title('🌩️ Storm Controls');
-                const bloomFolder = gui.addFolder('💡 Bloom Effect');
+                gui.close(); // Start closed
+                gui.title('🌩️ Ocean Controls');
+                
+                // Performance Folder
+                const perfFolder = gui.addFolder('⚡ Performance');
+                perfFolder.add(this.settings, 'oceanSegments', 50, 300, 10).name('Ocean Quality').onChange(v => {
+                    log(`Ocean segments: ${v} (requires reload)`);
+                    if (confirm(`เปลี่ยน Ocean Quality เป็น ${v}\nต้องรีโหลดหน้าเพื่อมีผล ต้องการรีโหลดไหม?`)) {
+                        location.reload();
+                    }
+                });
+                perfFolder.add(this.settings, 'particleCount', 200, 2000, 100).name('Particles').onChange(v => {
+                    log(`Particles: ${v} (requires reload)`);
+                    if (confirm(`เปลี่ยน Particles เป็น ${v}\nต้องรีโหลดหน้าเพื่อมีผล ต้องการรีโหลดไหม?`)) {
+                        location.reload();
+                    }
+                });
+                perfFolder.add(this.settings, 'fishCount', 3, 20, 1).name('Fish Count').onChange(v => {
+                    log(`Fish: ${v} (requires reload)`);
+                    if (confirm(`เปลี่ยน Fish Count เป็น ${v}\nต้องรีโหลดหน้าเพื่อมีผล ต้องการรีโหลดไหม?`)) {
+                        location.reload();
+                    }
+                });
+                
+                // Bloom Effects Folder
+                const bloomFolder = gui.addFolder('💡 Bloom Effects');
                 bloomFolder.add(this.settings, 'bloomEnabled').name('Enable Bloom').onChange(v => {
                     log(v ? 'Bloom ON' : 'Bloom OFF');
                 });
-                bloomFolder.add(this.settings, 'bloomStrength', 0, 2.5, 0.05).name('Strength').onChange(v => {
-                    if (this.bloomPass) this.bloomPass.strength = v;
+                bloomFolder.add(this.settings, 'bloomStrength', 0, 3, 0.05).name('Strength').onChange(v => {
+                    if(this.bloomPass) this.bloomPass.strength = v;
                 });
                 bloomFolder.add(this.settings, 'bloomRadius', 0, 1, 0.05).name('Radius').onChange(v => {
-                    if (this.bloomPass) this.bloomPass.radius = v;
+                    if(this.bloomPass) this.bloomPass.radius = v;
                 });
-                bloomFolder.add(this.settings, 'bloomThreshold', 0, 1, 0.02).name('Threshold').onChange(v => {
-                    if (this.bloomPass) this.bloomPass.threshold = v;
+                bloomFolder.add(this.settings, 'bloomThreshold', 0, 2, 0.02).name('Threshold').onChange(v => {
+                    if(this.bloomPass) this.bloomPass.threshold = v;
                 });
-                gui.close();
                 
-                // ปุ่ม
+                // Scene Controls Folder
+                const sceneFolder = gui.addFolder('🌍 Scene Controls');
+                sceneFolder.add(this.settings, 'dayNightMode', ['Day', 'Night']).name('Time of Day').onChange(v => {
+                    this.isNight = v === 'Night';
+                    this.setDayNightMode(this.isNight);
+                    document.getElementById('daynightBtn').innerHTML = this.isNight ? '🌙 กลางคืน' : '☀️ กลางวัน';
+                });
+                sceneFolder.add(this.settings, 'stormMode').name('Storm Active').onChange(v => {
+                    if (v !== this.isStormActive) this.toggleStorm();
+                });
+                
+                // Info Folder
+                const infoFolder = gui.addFolder('ℹ️ Information');
+                const deviceInfo = {
+                    device: window.innerWidth < 768 ? 'Mobile' : 'Desktop',
+                    resolution: `${window.innerWidth}×${window.innerHeight}`,
+                    renderer: this.renderer.capabilities.isWebGL2 ? 'WebGL2' : 'WebGL1'
+                };
+                infoFolder.add(deviceInfo, 'device').name('Device').listen();
+                infoFolder.add(deviceInfo, 'resolution').name('Resolution').listen();
+                infoFolder.add(deviceInfo, 'renderer').name('Renderer').listen();
+                
+                // Close all folders initially except scene controls
+                perfFolder.close();
+                bloomFolder.close();
+                infoFolder.close();
+                
                 const btnDayNight = document.getElementById('daynightBtn');
                 btnDayNight.addEventListener('click', () => this.toggleDayNight());
                 const btnStorm = document.getElementById('stormBtn');
                 btnStorm.addEventListener('click', () => this.toggleStorm());
                 
                 this.setDayNightMode(true);
-                log("✅ พร้อมใช้งาน! กดปุ่ม 'เปิดพายุฝน' เพื่อดูเมฆเรืองแสงและฟ้าผ่า");
+                log("✅ พร้อมใช้งาน | ปลา 15 ตัวกำลังว่ายน้ำ | Threshold default = 1");
                 
                 window.addEventListener('resize', () => this.onResize());
                 this.animate();
@@ -901,16 +1444,16 @@
             
             toggleStorm() {
                 this.isStormActive = !this.isStormActive;
+                this.settings.stormMode = this.isStormActive; // Sync with GUI
                 const btn = document.getElementById('stormBtn');
                 if (this.isStormActive) {
                     btn.innerHTML = '🌧️ ปิดพายุฝน';
                     btn.style.background = '#335577';
                     this.rainSystem.setRainActive(true);
-                    // ปรับบรรยากาศให้มืดครึ้ม
                     this.scene.fog.density = 0.025;
                     this.ambientLight.intensity = 0.35;
                     this.directionalLight.intensity = 0.3;
-                    log("⛈️ เปิดโหมดพายุฝน - เมฆเรืองแสงและฟ้าผ่า");
+                    log("⛈️ เปิดโหมดพายุฝน - เมฆเรืองแสง ฟ้าผ่า");
                 } else {
                     btn.innerHTML = '⛈️ เปิดพายุฝน';
                     btn.style.background = '#331100';
@@ -924,6 +1467,7 @@
             
             toggleDayNight() {
                 this.isNight = !this.isNight;
+                this.settings.dayNightMode = this.isNight ? 'Night' : 'Day'; // Sync with GUI
                 this.setDayNightMode(this.isNight);
                 const btn = document.getElementById('daynightBtn');
                 if (this.isNight) {
@@ -973,27 +1517,29 @@
                 this.particles.update(time);
                 this.lighthouse.update(time);
                 this.rainSystem.update(delta);
-                if (this.fishSystem) this.fishSystem.update(time, delta);
+                this.fishSystem.update(time, delta);
                 
-                // ฟ้าผ่าสุ่มเมื่อเปิดพายุ
                 if (this.isStormActive) {
                     if (time > this.lightningTimer) {
-                        // สุ่มช่วงเวลาฟ้าผ่า 3-8 วินาที
                         this.lightningTimer = time + 3 + Math.random() * 5;
                         const flash = this.cloudSystem.triggerLightning();
-                        // กระพริบแสงทั้งฉากชั่วขณะ
-                        this.directionalLight.intensity += flash * 0.8;
+                        this.targetLightningIntensity = 0.6 + flash * 0.8;
+                        // Reset target after flash duration
                         setTimeout(() => {
-                            if (this.directionalLight.intensity > 0.3)
-                                this.directionalLight.intensity = this.isStormActive ? 0.3 : 0.6;
+                            this.targetLightningIntensity = this.isStormActive ? 0.3 : 0.6;
                         }, 150);
                     }
+                    
+                    // Smooth lightning intensity transition
+                    this.lightningIntensity = THREE.MathUtils.lerp(this.lightningIntensity, this.targetLightningIntensity, delta * 8);
+                    this.directionalLight.intensity = this.lightningIntensity;
+                } else {
+                    this.lightningIntensity = THREE.MathUtils.lerp(this.lightningIntensity, 0.6, delta * 2);
+                    this.directionalLight.intensity = this.lightningIntensity;
                 }
                 
-                // อัปเดตเมฆ
                 this.cloudSystem.update(time, this.isStormActive);
                 
-                // ตั้งค่า bloom ตาม GUI
                 if (this.settings.bloomEnabled && this.composer) {
                     this.bloomPass.strength = this.settings.bloomStrength;
                     this.bloomPass.radius = this.settings.bloomRadius;
@@ -1005,11 +1551,60 @@
                 
                 this.controls.update();
             }
+            
+            // Resource disposal for memory management
+            dispose() {
+                if (this.ocean) {
+                    this.ocean.geometry && this.ocean.geometry.dispose();
+                    this.ocean.material && this.ocean.material.dispose();
+                }
+                if (this.particles) {
+                    this.particles.points.geometry && this.particles.points.geometry.dispose();
+                    this.particles.points.material && this.particles.points.material.dispose();
+                }
+                if (this.rainSystem) {
+                    this.rainSystem.points.geometry && this.rainSystem.points.geometry.dispose();
+                    this.rainSystem.points.material && this.rainSystem.points.material.dispose();
+                }
+                if (this.lighthouse) {
+                    this.lighthouse.group.traverse(child => {
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(mat => mat.dispose());
+                            } else {
+                                child.material.dispose();
+                            }
+                        }
+                    });
+                }
+                // Dispose shared fish resources
+                Object.values(FishGeometryCache).forEach(geo => {
+                    if (geo && geo.dispose) geo.dispose();
+                });
+                FishMaterialCache.body.forEach(mat => mat.dispose());
+                FishMaterialCache.fin.forEach(mat => mat.dispose());
+                FishMaterialCache.eye.forEach(mat => mat.dispose());
+                
+                if (this.renderer) {
+                    this.renderer.dispose();
+                }
+            }
         }
         
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (window.__oceanApp) {
+                window.__oceanApp.dispose();
+            }
+        });
+        
         window.addEventListener('DOMContentLoaded', () => {
+            initControlHints(); // Initialize control hints
             const app = new OceanSceneApp();
             app.init();
+            window.__oceanApp = app; // Store for cleanup
+            log(`✅ พร้อมใช้งาน | ปลา ${CONFIG.fish.maxCount} ตัวกำลังว่ายน้ำ | Optimized for ${window.innerWidth < 768 ? 'Mobile' : 'Desktop'}`);
         });
     </script>
 </body>
