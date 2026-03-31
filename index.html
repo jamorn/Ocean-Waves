@@ -2,8 +2,9 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <link rel="shortcut icon" href="#"><!-- fix favicon.ico -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>2.5D Ocean Waves - Stormy Sky (v5)</title>
+    <title>2.5D Ocean Waves - Stormy Sky</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #info {
@@ -421,10 +422,16 @@
                 waveComplexity: window.innerWidth < 768 ? 4 : 8
             },
             fish: {
-                maxCount: window.innerWidth < 768 ? 8 : 15,
+                maxCount: window.innerWidth < 768 ? 15 : 25,
                 turnSpeed: 0.055,
                 targetThreshold: 3.8,
                 swimBob: 0.007
+                ,
+                // separation: distance under which fishes will steer away from each other
+                separationDistance: 0.9,
+                separationStrength: 1.5,
+                // vertical spread control (max random Y offset at spawn)
+                verticalSpread: 0.9
             },
             particles: {
                 count: window.innerWidth < 768 ? 800 : 1800
@@ -540,8 +547,8 @@
             console.log(`Device detected: ${deviceType} (touch: ${hasTouch}, mouse: ${hasMouse}, width: ${screenWidth})`);
         }
 
-        // Movement bounds and buoy position for fish
-        const BOUNDS = { x: { min: -24, max: 24 }, z: { min: -22, max: 22 }, y: { min: -7, max: -1.5 } };
+        // Movement bounds and buoy position for fish (expanded for more fish)
+        const BOUNDS = { x: { min: -32, max: 32 }, z: { min: -28, max: 28 }, y: { min: -8, max: -1 } };
 
         // 聚: Buoy / Lighthouse position — fish will swim around this point
         const BUOY_POS = new THREE.Vector3(5, -2.5, -4);
@@ -1056,6 +1063,15 @@
                 this.size = size;
                 this.speed = 0.9 + Math.random() * 0.9;
                 this._tempVec = new THREE.Vector3(); // Reuse vector for calculations
+                
+                // Side-dodging properties
+                this.dodgeVelocity = new THREE.Vector3(0, 0, 0);
+                this.dodgeDecay = 0.85;
+                
+                // Y-level separation properties
+                this.originalY = null; // will be set after positioning
+                this.targetY = null;   // target Y when avoiding collision
+                this.yTransitionSpeed = 2.0;
 
                 const bodyMat = FishMaterialCache.getBodyMaterial(color);
                 const finMat = FishMaterialCache.getFinMaterial(color);
@@ -1184,9 +1200,9 @@
                 let attempts = 0;
                 do {
                     newTarget = {
-                        x: BUOY_POS.x + (Math.random() - 0.5) * 12,
-                        y: Math.max(BOUNDS.y.min + 0.5, Math.min(BOUNDS.y.max - 0.5, BUOY_POS.y + (Math.random() - 0.5) * 2.5)),
-                        z: BUOY_POS.z + (Math.random() - 0.5) * 12
+                        x: BUOY_POS.x + (Math.random() - 0.5) * 30,
+                        y: Math.max(BOUNDS.y.min + 0.5, Math.min(BOUNDS.y.max - 0.5, BUOY_POS.y + (Math.random() - 0.5) * 4.0)),
+                        z: BUOY_POS.z + (Math.random() - 0.5) * 30
                     };
                     attempts++;
                 } while (attempts < 5 && (
@@ -1214,6 +1230,20 @@
                 this.group.position.z += forwardZ * this.speed * delta;
                 this.group.position.y += this._tempVec.y * 0.6 * delta;
 
+                // Apply dodge velocity (side-dodging behavior)
+                this.group.position.add(this.dodgeVelocity.clone().multiplyScalar(delta));
+                this.dodgeVelocity.multiplyScalar(this.dodgeDecay);
+                
+                // Apply Y-level transition (size-based separation)
+                if (this.targetY !== null) {
+                    const yDiff = this.targetY - this.group.position.y;
+                    if (Math.abs(yDiff) > 0.05) {
+                        this.group.position.y += yDiff * this.yTransitionSpeed * delta;
+                    } else {
+                        this.group.position.y = this.targetY; // snap to target if very close
+                    }
+                }
+
                 // Smooth boundary clamping to prevent jitter
                 const margin = 1.0;
                 if (this.group.position.x < BOUNDS.x.min + margin || this.group.position.x > BOUNDS.x.max - margin ||
@@ -1229,8 +1259,8 @@
                     this.tailGroup.rotation.y = Math.sin(t * 13) * 0.4;
                 }
 
-                // gentle bob scaled by time
-                this.group.position.y += Math.sin(t * 3.8) * CONFIG.fish.swimBob;
+                // gentle bob scaled by time (reduced to not interfere with Y-level separation)
+                this.group.position.y += Math.sin(t * 3.8) * CONFIG.fish.swimBob * 0.3;
 
                 // Use squared distance to avoid expensive sqrt
                 const distSq = this.group.position.distanceToSquared(this.target);
@@ -1247,22 +1277,97 @@
                 const colors = [0xff6666, 0x66ff66, 0x6666ff, 0xffaa66, 0xff66ff];
                 const sizes = [0.25, 0.35, 0.45, 0.3, 0.4];
                 const baseAngle = Math.random() * Math.PI * 2;
+                // Spread fishes more evenly in radius and add vertical spread
+                // Divide into 2 groups: upper and lower levels to reduce crowding
                 for (let i = 0; i < count; i++) {
                     const f = new Fish(colors[i % colors.length], sizes[i % sizes.length], scene);
-                    // arrange fish around buoy with even angular spacing + jitter to avoid overlap
                     const angle = baseAngle + (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
-                    const radius = 6 + i * 1.8 + Math.random() * 2; // staggered radii
+                    // uniform radius distribution across 8..26 (expanded to reduce clustering)
+                    const radius = 8 + (i / Math.max(1, count - 1)) * 18 + Math.random() * 3;
                     const px = BUOY_POS.x + Math.cos(angle) * radius;
                     const pz = BUOY_POS.z + Math.sin(angle) * radius;
-                    const py = BUOY_POS.y + (Math.random() - 0.5) * 1.6;
+                    
+                    // Divide fish into 2 vertical groups for better distribution
+                    const isUpperGroup = i < Math.floor(count / 2);
+                    const levelOffset = isUpperGroup ? 0.9 : -0.9; // 1.8 units apart
+                    const baseY = BUOY_POS.y + levelOffset;
+                    const py = baseY + (Math.random() - 0.5) * (CONFIG.fish.verticalSpread * 0.6); // reduced spread within each group
+                    
                     f.group.position.set(px, Math.max(BOUNDS.y.min, Math.min(BOUNDS.y.max, py)), pz);
-                    // set an initial target a bit wider so they roam apart
+                    // Store original Y position for return reference
+                    f.originalY = f.group.position.y;
+                    f.targetY = f.originalY;
                     f.setNewTarget();
                     this.fishes.push(f);
                 }
             }
 
             update(time, delta) {
+                const fishes = this.fishes;
+                const count = fishes.length;
+                // simple O(n^2) collision detection - fine for small counts (<= 30)
+                for (let i = 0; i < count; i++) {
+                    const fi = fishes[i];
+                    const posI = fi.group.position;
+                    for (let j = 0; j < count; j++) {
+                        if (i === j) continue;
+                        const fj = fishes[j];
+                        const posJ = fj.group.position;
+                        const dx = posI.x - posJ.x;
+                        const dy = posI.y - posJ.y;
+                        const dz = posI.z - posJ.z;
+                        const distSq = dx*dx + dy*dy + dz*dz;
+                        const sepDist = CONFIG.fish.separationDistance;
+                        if (distSq > 0 && distSq < sepDist * sepDist) {
+                            // Size-based Y-level separation: larger fish stays lower, smaller fish goes higher
+                            const sizeI = fi.size;
+                            const sizeJ = fj.size;
+                            const levelSeparation = 1.2; // vertical separation distance
+                            
+                            if (sizeI > sizeJ) {
+                                // Fish i is larger - stays at or moves to lower level
+                                fi.targetY = fi.originalY - levelSeparation * 0.5;
+                                // Fish j is smaller - moves to upper level
+                                fj.targetY = fj.originalY + levelSeparation * 0.5;
+                            } else if (sizeI < sizeJ) {
+                                // Fish i is smaller - moves to upper level
+                                fi.targetY = fi.originalY + levelSeparation * 0.5;
+                                // Fish j is larger - stays at or moves to lower level
+                                fj.targetY = fj.originalY - levelSeparation * 0.5;
+                            } else {
+                                // Same size - use index to decide (consistent behavior)
+                                if (i < j) {
+                                    fi.targetY = fi.originalY + levelSeparation * 0.5;
+                                    fj.targetY = fj.originalY - levelSeparation * 0.5;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Check if any fish should return to original Y level
+                for (let i = 0; i < count; i++) {
+                    const fi = fishes[i];
+                    let shouldReturnToOriginal = true;
+                    
+                    // Check if this fish is still too close to any other fish
+                    for (let j = 0; j < count; j++) {
+                        if (i === j) continue;
+                        const fj = fishes[j];
+                        const distSq = fi.group.position.distanceToSquared(fj.group.position);
+                        const sepDist = CONFIG.fish.separationDistance;
+                        if (distSq < sepDist * sepDist * 2.5) { // larger threshold for return
+                            shouldReturnToOriginal = false;
+                            break;
+                        }
+                    }
+                    
+                    if (shouldReturnToOriginal) {
+                        fi.targetY = fi.originalY;
+                    }
+                }
+
+                // then update each fish's own steering
                 this.fishes.forEach(f => f.update(time, delta, false));
             }
         }
