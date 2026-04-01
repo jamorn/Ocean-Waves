@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="shortcut icon" href="#">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2.5D Ocean Waves - Stormy Sky | Procedural Fish</title>
+    <title>2.5D Ocean Waves - Stormy Sky | </title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #info {
@@ -89,6 +89,62 @@
         @media (min-width: 601px) and (max-width: 1024px) {
             .lil-gui { top: 20px !important; left: 20px !important; right: auto !important; }
         }
+        
+        /* Control Hints Styles */
+        .control-hints {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            z-index: 999;
+            transition: opacity 0.3s ease;
+            max-width: 200px;
+        }
+        .control-hints:hover { opacity: 0.7; }
+        .hint-icon { position: relative; min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+        .mouse-icon { position: relative; width: 20px; height: 28px; }
+        .mouse-body { width: 20px; height: 28px; border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 10px; background: rgba(255, 255, 255, 0.1); position: relative; }
+        .mouse-wheel { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 2px; height: 6px; background: rgba(255, 255, 255, 0.6); border-radius: 1px; animation: mouseScroll 2s ease-in-out infinite; }
+        .mouse-click { position: absolute; top: -5px; left: 2px; width: 8px; height: 12px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 4px 4px 0 0; background: rgba(255, 255, 255, 0.1); animation: mouseClick 3s ease-in-out infinite; }
+        .touch-icon { position: relative; width: 24px; height: 24px; }
+        .finger { position: absolute; width: 8px; height: 12px; background: rgba(255, 255, 255, 0.8); border-radius: 4px; top: 6px; left: 6px; animation: touchMove 3s ease-in-out infinite; }
+        .finger-2 { left: 16px; animation-delay: 0.1s; animation-name: touchMove2; }
+        .tablet-icon { position: relative; width: 28px; height: 20px; }
+        .tablet-body { width: 28px; height: 20px; border: 2px solid rgba(255, 255, 255, 0.8); border-radius: 4px; background: rgba(255, 255, 255, 0.1); position: relative; }
+        .tablet-finger { position: absolute; width: 6px; height: 8px; background: rgba(255, 255, 255, 0.8); border-radius: 3px; top: 6px; left: 8px; animation: tabletTouch 3s ease-in-out infinite; }
+        .tablet-finger-2 { left: 16px; animation-delay: 0.2s; animation-name: tabletTouch2; }
+        .hybrid-icon { position: relative; width: 32px; height: 28px; }
+        .hybrid-mouse { position: absolute; width: 16px; height: 22px; border: 1.5px solid rgba(255, 255, 255, 0.6); border-radius: 8px; background: rgba(255, 255, 255, 0.05); left: 0; top: 3px; }
+        .hybrid-touch { position: absolute; width: 12px; height: 16px; border: 1.5px solid rgba(255, 255, 255, 0.6); border-radius: 3px; background: rgba(255, 255, 255, 0.05); right: 0; top: 0; }
+        .hybrid-finger { position: absolute; width: 4px; height: 6px; background: rgba(255, 255, 255, 0.7); border-radius: 2px; top: 5px; left: 2px; animation: hybridTouch 2.5s ease-in-out infinite; }
+        .hint-text { line-height: 1.3; font-size: 11px; color: rgba(255, 255, 255, 0.85); }
+        @keyframes mouseScroll { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(3px); } }
+        @keyframes mouseClick { 0%, 90%, 100% { background: rgba(255, 255, 255, 0.1); } 5%, 15% { background: rgba(255, 255, 255, 0.4); } }
+        @keyframes touchMove { 0%, 100% { transform: translate(0, 0); opacity: 0.8; } 50% { transform: translate(8px, -4px); opacity: 1; } }
+        @keyframes touchMove2 { 0%, 100% { transform: translate(0, 0); opacity: 0.8; } 50% { transform: translate(-8px, -4px); opacity: 1; } }
+        @keyframes tabletTouch { 0%, 100% { transform: translate(0, 0); opacity: 0.8; } 50% { transform: translate(6px, -2px); opacity: 1; } }
+        @keyframes tabletTouch2 { 0%, 100% { transform: translate(0, 0); opacity: 0.8; } 50% { transform: translate(-6px, -2px); opacity: 1; } }
+        @keyframes hybridTouch { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; transform: scale(1.2); } }
+        @media (max-width: 480px) {
+            .control-hints { bottom: 20px; right: 15px; top: auto; left: auto; padding: 8px 10px; font-size: 10px; max-width: 140px; flex-direction: column; text-align: center; gap: 8px; background: rgba(0,0,0,0.3); opacity: 0.7; }
+            .hint-icon { min-width: auto; height: 24px; margin: 0 auto; }
+            .hint-text { font-size: 9px; line-height: 1.2; text-align: center; }
+        }
+        @media (max-width: 768px) and (min-width: 481px) {
+            .control-hints { bottom: 20px; right: 15px; padding: 10px 14px; font-size: 11px; max-width: 180px; background: rgba(0,0,0,0.3); opacity: 0.7; }
+        }
+        
         .lightning-text { color: #ff8888; }
         .storm-btn-color { color: #ffaa66; }
         .hidden { display: none; }
@@ -99,6 +155,38 @@
     <button id="daynightBtn" class="mode-toggle">🌙 กลางคืน</button>
     <button id="stormBtn" class="mode-toggle storm-btn-color">⛈️ เปิดพายุฝน</button>
     <div id="debug">กำลังโหลด...</div>
+    
+    <!-- Control Hints -->
+    <div id="controlHints" class="control-hints">
+        <div class="hint-icon">
+            <div class="mouse-icon" id="mouseIcon">
+                <div class="mouse-body"></div>
+                <div class="mouse-wheel"></div>
+                <div class="mouse-click"></div>
+            </div>
+            <div class="touch-icon hidden" id="touchIcon">
+                <div class="finger"></div>
+                <div class="finger finger-2"></div>
+            </div>
+            <div class="tablet-icon hidden" id="tabletIcon">
+                <div class="tablet-body"></div>
+                <div class="tablet-finger"></div>
+                <div class="tablet-finger tablet-finger-2"></div>
+            </div>
+            <div class="hybrid-icon hidden" id="hybridIcon">
+                <div class="hybrid-mouse"></div>
+                <div class="hybrid-touch">
+                    <div class="hybrid-finger"></div>
+                </div>
+            </div>
+        </div>
+        <div class="hint-text">
+            <span id="pcHint">Left click + drag to rotate<br>Scroll to zoom</span>
+            <span id="mobileHint" class="hidden">Touch + drag to rotate<br>2 fingers to zoom</span>
+            <span id="tabletHint" class="hidden">Touch + drag to rotate<br>Pinch zoom or 2 fingers</span>
+            <span id="hybridHint" class="hidden">Mouse/Touch + drag to rotate<br>Scroll/Pinch to zoom</span>
+        </div>
+    </div>
     
     <script type="importmap">
         {
@@ -129,6 +217,121 @@
                 }, 16);
             }
         }
+        
+        // Initialize control hints based on device
+        function initControlHints() {
+            const mouseIcon = document.getElementById('mouseIcon');
+            const touchIcon = document.getElementById('touchIcon');
+            const tabletIcon = document.getElementById('tabletIcon');
+            const hybridIcon = document.getElementById('hybridIcon');
+            const pcHint = document.getElementById('pcHint');
+            const mobileHint = document.getElementById('mobileHint');
+            const tabletHint = document.getElementById('tabletHint');
+            const hybridHint = document.getElementById('hybridHint');
+            
+            // Enhanced device detection
+            const hasTouch = 'ontouchstart' in window;
+            const hasMouse = window.matchMedia('(pointer: fine)').matches;
+            const screenWidth = window.innerWidth;
+            const userAgent = navigator.userAgent.toLowerCase();
+            
+            // Device classification
+            let deviceType = 'desktop';
+            
+            if (hasTouch && hasMouse) {
+                deviceType = 'hybrid';
+            } else if (hasTouch) {
+                if (screenWidth >= 768 && screenWidth <= 1024) {
+                    deviceType = 'tablet';
+                } else if (screenWidth < 768) {
+                    deviceType = 'mobile';
+                } else {
+                    deviceType = 'tablet';
+                }
+            } else {
+                deviceType = 'desktop';
+            }
+            
+            // Override for specific devices
+            if (userAgent.includes('ipad') || userAgent.includes('tablet')) {
+                deviceType = 'tablet';
+            }
+            
+            // Hide all icons and hints first
+            [mouseIcon, touchIcon, tabletIcon, hybridIcon].forEach(icon => {
+                if (icon) icon.classList.add('hidden');
+            });
+            [pcHint, mobileHint, tabletHint, hybridHint].forEach(hint => {
+                if (hint) hint.classList.add('hidden');
+            });
+            
+            // Show appropriate icon and hint
+            switch (deviceType) {
+                case 'desktop':
+                    if (mouseIcon && pcHint) {
+                        mouseIcon.classList.remove('hidden');
+                        pcHint.classList.remove('hidden');
+                    }
+                    break;
+                case 'mobile':
+                    if (touchIcon && mobileHint) {
+                        touchIcon.classList.remove('hidden');
+                        mobileHint.classList.remove('hidden');
+                    }
+                    break;
+                case 'tablet':
+                    if (tabletIcon && tabletHint) {
+                        tabletIcon.classList.remove('hidden');
+                        tabletHint.classList.remove('hidden');
+                    }
+                    break;
+                case 'hybrid':
+                    if (hybridIcon && hybridHint) {
+                        hybridIcon.classList.remove('hidden');
+                        hybridHint.classList.remove('hidden');
+                    }
+                    break;
+            }
+            
+            // Auto-hide hints after user interaction
+            let interactionCount = 0;
+            const hints = document.getElementById('controlHints');
+            
+            const hideHints = () => {
+                interactionCount++;
+                if (interactionCount > 3) {
+                    hints.style.opacity = '0.3';
+                    setTimeout(() => {
+                        if (hints.style.opacity === '0.3') {
+                            hints.classList.add('hidden');
+                        }
+                    }, 3000);
+                }
+            };
+            
+            // Listen for user interactions
+            document.addEventListener('mousedown', hideHints);
+            document.addEventListener('touchstart', hideHints);
+            document.addEventListener('wheel', hideHints);
+            
+            // Debug log for development
+            console.log(`Device detected: ${deviceType} (touch: ${hasTouch}, mouse: ${hasMouse}, width: ${screenWidth})`);
+            
+            // Auto-hide info div on small screens after 10 seconds
+            const infoDiv = document.getElementById('info');
+            if (infoDiv && screenWidth < 768) {
+                // Set transition first
+                infoDiv.style.transition = 'opacity 1s ease-out';
+                setTimeout(() => {
+                    // Trigger fade out
+                    infoDiv.style.opacity = '0';
+                    // Wait for transition to complete before hiding
+                    setTimeout(() => {
+                        infoDiv.style.display = 'none';
+                    }, 1000);
+                }, 10000);
+            }
+        }
 
         const CONFIG = {
             ocean: {
@@ -137,7 +340,7 @@
             },
             fish: {
                 maxCount: window.innerWidth < 768 ? 15 : 25,
-                turnSpeed: 0.018,// ลด turnSpeed
+                turnSpeed: 0.018,
                 targetThreshold: 3.8,
                 swimBob: 0.007,
                 separationDistance: 2.8,
@@ -258,19 +461,19 @@
         class Lighthouse {
             constructor(x = 6, z = -5) {
                 this.group = new THREE.Group();
-                const baseCylinder = new THREE.Mesh(
+                this.baseCylinder = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.95, 1.3, 0.5, 32),
                     new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.1 })
                 );
-                baseCylinder.position.y = 0.25;
-                this.group.add(baseCylinder);
+                this.baseCylinder.position.y = 0.25;
+                this.group.add(this.baseCylinder);
                 
-                const bottomDome = new THREE.Mesh(
+                this.bottomDome = new THREE.Mesh(
                     new THREE.SphereGeometry(1.3, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
                     new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.1 })
                 );
-                bottomDome.position.y = 0;
-                this.group.add(bottomDome);
+                this.bottomDome.position.y = 0;
+                this.group.add(this.bottomDome);
                 
                 const connectingTower = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.6, 0.85, 1.3, 16),
@@ -1275,6 +1478,13 @@
                     if (this.bloomPass) this.bloomPass.strength = 0.9;
                 }
                 this.lighthouse.setIntensityMode(isNight);
+                
+                // Realistic underwater buoy base color change
+                if (this.lighthouse.baseCylinder && this.lighthouse.bottomDome) {
+                    const underwaterColor = isNight ? 0x445566 : 0xb8dde0;
+                    this.lighthouse.baseCylinder.material.color.setHex(underwaterColor);
+                    this.lighthouse.bottomDome.material.color.setHex(underwaterColor);
+                }
             }
             
             onResize() {
@@ -1331,6 +1541,7 @@
             const app = new OceanSceneApp();
             app.init();
             window.__oceanApp = app;
+            initControlHints(); // Initialize control hints
             log(`✅ Ocean-Wavesv-v3 ready | Procedural Fish (${CONFIG.fish.maxCount} fishes)`);
         });
     </script>
